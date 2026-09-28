@@ -57,7 +57,8 @@ const setupUntilConfirm = (root) => {
     ...config,
     layers: {
       unit: {
-        command: 'node --test --test-reporter=junit --test-reporter-destination=.qa/tmp/unit-junit.xml "test/*.test.mjs"',
+        // 不加引號，讓 shell 展開 glob：Node 20 的 --test 不支援 glob 參數
+        command: 'node --test --test-reporter=junit --test-reporter-destination=.qa/tmp/unit-junit.xml test/*.test.mjs',
         junit: '.qa/tmp/unit-junit.xml'
       }
     }
