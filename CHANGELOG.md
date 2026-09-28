@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.3.0...v0.3.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* wrap long case-ID lists and show correct rubric maxima on the review page ([#4](https://github.com/JulianWangHZ/QA-Workflow-Skills/issues/4)) ([04d034d](https://github.com/JulianWangHZ/QA-Workflow-Skills/commit/04d034da8bea9bc24c05b49559ec2ef672d1da9f))
+
 ## [0.3.0](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.2.0...v0.3.0) (2026-09-28)
 
 
