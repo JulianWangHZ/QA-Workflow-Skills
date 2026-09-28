@@ -75,6 +75,9 @@ const setupUntilConfirm = (root) => {
   const review = readFileSync(join(runDir(root), 'cases-review.html'), 'utf8');
   ['overview', 'matrix', 'state', 'prototype', 'acceptance', 'bdd'].forEach((id) => assert.match(review, new RegExp(`data-page="${id}"`)));
   assert.match(review, /錯誤密碼被拒絕/);
+  // 用例編號之間要有空白，瀏覽器才能換行，否則一長串會超出版面
+  assert.match(review, /<\/a> <a class="ref"/);
+  assert.doesNotMatch(review, /<\/a><a class="ref"/);
   const derived = JSON.parse(readFileSync(join(runDir(root), 'cases.json'), 'utf8'));
   assert.deepEqual(derived.cases.map((c) => c.id), ['TC-1', 'TC-2']);
 };

@@ -184,7 +184,7 @@ td ul { margin: 0; padding-left: 1.1em; }
 .tag.manual { border-style: dashed; }
 a.ref {
   font-family: var(--mono); font-size: var(--fs-sm); color: var(--ink); text-decoration: none;
-  border-bottom: 1px solid var(--rule-2); margin-right: 8px; white-space: nowrap;
+  border-bottom: 1px solid var(--rule-2); margin-right: 4px; white-space: nowrap; /* 編號之間的空白是換行點，加上空白約 8px */
 }
 a.ref:hover { border-bottom-color: var(--ink); background: var(--marker-soft); }
 .status-ok { color: var(--marker-ink); font-weight: 600; }

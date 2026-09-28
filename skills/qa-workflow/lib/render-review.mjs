@@ -26,7 +26,7 @@ const table = (headers, rows, rowAttrs = () => '') => (rows.length === 0
 const td = (html, cls = '') => `<td${cls ? ` class="${cls}"` : ''}>${html}</td>`;
 
 const caseAnchor = (id) => `case-${id}`;
-const refs = (ids) => (ids ?? []).map((id) => `<a class="ref" href="#acceptance/${caseAnchor(id)}">${escapeHtml(id)}</a>`).join('');
+const refs = (ids) => (ids ?? []).map((id) => `<a class="ref" href="#acceptance/${caseAnchor(id)}">${escapeHtml(id)}</a>`).join(' ');
 
 const priorityTag = (p) => `<span class="tag ${p === 'P0' ? 'p0' : p === 'P1' ? 'p1' : ''}">${escapeHtml(p)}</span>`;
 const notes = (items, cls = '') => (items.length ? `<ul class="notes ${cls}">${items.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ul>` : '');
@@ -130,13 +130,20 @@ const techniqueGrid = ({ design, dict, r }) => `<div class="techniques">${design
 }).join('')}</div>`;
 
 // 評分標準（review-rubric.md）各維度滿分；breakdown 可以直接寫 { score, max } 覆蓋
-const RUBRIC_MAX = { 風險覆蓋: 20, 技法與矩陣: 20, 狀態機: 10, 預期可判定: 15, 依據真實: 10, 'BDD 品質': 15, 精簡與原型: 10 };
+const RUBRIC_MAX = { 風險覆蓋: 20, 技法與矩陣: 20, 狀態機: 10, 預期可判定: 15, 依據真實: 10, BDD: 15, 精簡與原型: 10 };
+const compact = (s) => String(s).replace(/\s+/g, '');
+
+// 評審寫出的名稱常有空白或字尾差異（「BDD品質」「技法與矩陣完整」），忽略空白後用前綴比對
+export const rubricMax = (name) => {
+  const key = Object.keys(RUBRIC_MAX).find((k) => compact(name).startsWith(k));
+  return key ? RUBRIC_MAX[key] : 100;
+};
 
 const scorecard = ({ design, minReviewScore, r }) => {
   const { selfReview } = design;
   const bars = Object.entries(selfReview.breakdown ?? {}).map(([name, value]) => {
     const score = typeof value === 'number' ? value : Number(value?.score ?? 0);
-    const max = typeof value === 'object' && value?.max ? Number(value.max) : RUBRIC_MAX[name] ?? 100;
+    const max = typeof value === 'object' && value?.max ? Number(value.max) : rubricMax(name);
     const pct = Math.max(0, Math.min(100, (score / max) * 100));
     return `<li><span>${escapeHtml(name)}</span><span class="bar"><i style="width:${pct}%"></i></span><span class="v">${escapeHtml(score)}/${escapeHtml(max)}</span></li>`;
   });
