@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+
+# qa-workflow runtime output (created in whichever project runs it)
+.qa/
+
+# Tool output and test artifacts
+.playwright-mcp/
+test-results/
+playwright-report/
+coverage/
+*.log
+*.tmp
+
+# Local secrets and personal settings
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store

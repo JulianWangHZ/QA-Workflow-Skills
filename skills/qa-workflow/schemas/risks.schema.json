@@ -1,0 +1,25 @@
+{
+  "title": "risks.json — 風險分析產物",
+  "type": "object",
+  "required": ["version", "risks"],
+  "properties": {
+    "version": { "const": 1 },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "level", "area", "impact", "evidence"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^R-\\d+$" },
+          "title": { "type": "string", "minLength": 1 },
+          "level": { "enum": ["P0", "P1", "P2", "P3"] },
+          "area": { "type": "string", "minLength": 1 },
+          "impact": { "type": "string", "minLength": 1 },
+          "likelihood": { "enum": ["high", "medium", "low"] },
+          "evidence": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "notes": { "type": "string" }
+        }
+      }
+    }
+  }
+}

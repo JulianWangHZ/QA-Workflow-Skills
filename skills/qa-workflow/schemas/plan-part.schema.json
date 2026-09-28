@@ -1,0 +1,102 @@
+{
+  "title": "plan/<feature>.json — 單一 feature 的自動化計畫（planner 寫入，qa plan-merge 合併）",
+  "type": "object",
+  "required": [
+    "version",
+    "feature",
+    "entries"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "feature": {
+      "type": "string",
+      "minLength": 1
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "caseId",
+          "feasibility",
+          "probed",
+          "evidence",
+          "oracles"
+        ],
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "pattern": "^TC-\\d+$"
+          },
+          "feasibility": {
+            "enum": [
+              "AUTOMATABLE",
+              "NEEDS_API_SETUP",
+              "NOT_FEASIBLE"
+            ]
+          },
+          "probed": {
+            "type": "boolean"
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string"
+          },
+          "apiSetup": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "given",
+                "how"
+              ],
+              "properties": {
+                "given": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "how": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "available": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "oracles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "then",
+                "observable"
+              ],
+              "properties": {
+                "then": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "observable": {
+                  "type": "boolean"
+                },
+                "locator": {
+                  "type": "string"
+                },
+                "note": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

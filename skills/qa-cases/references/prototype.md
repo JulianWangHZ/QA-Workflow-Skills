@@ -1,0 +1,114 @@
+# 互動原型規範
+
+原型的目的是**確認需求**：讓 PM、設計與 QA 在寫自動化之前，對畫面、狀態與流程達成共識。
+它不是設計稿，也不是產品程式碼。
+
+## 什麼時候做
+
+| 情況 | 做法 |
+|---|---|
+| 範圍包含新畫面、改版、表單、多步驟流程、狀態顯示差異 | 必須做 |
+| 只改文案或樣式，而且沒有流程變化 | 可以不做，`skipReason`「只有樣式變更，以設計稿為準」 |
+| 純 API、批次、背景工作、資料修正 | 不做，`skipReason` 寫明原因 |
+
+## 做法
+
+1. 複製 `../assets/prototype-starter.html` 到 `qa path design-dir` 下，命名為 `prototype.html`。
+   - 左側是審閱面板，有兩個分頁：「情境示範」（點選後自動播放）與「畫面」（畫面清單與對應情境）；底部可以用 ← → 切換畫面。
+   - 右側是裝置，依視窗大小自動縮放，並跟隨審閱頁的深色／淺色模式。
+2. `<body>` 設定：
+   - `data-platform`：
+     - `app`：只有 iPhone 17 Pro（Dynamic Island、狀態列、Home 指示條）
+     - `web`：上方可以切換「桌面」（瀏覽器視窗，網址列顯示畫面的 `data-url`）與「手機」（iPhone 中的行動版網頁）
+   - `data-title`：功能名稱
+   - `data-subtitle`：一句話說明
+   - 產品主色：修改 `:root` 的 `--tint`
+3. 在 `#screens` 中，每個畫面一個 `<section class="screen">`：
+   - `data-id`：唯一 id（英文 kebab-case），與 `design.json` 的 `prototype.screens[].id` 一致
+   - `data-name`：畫面名稱，用業務語言
+   - `data-group`：側邊欄分組，例如「主流程」「錯誤狀態」
+   - `data-cases`：對應的情境 ID，以逗號分隔
+   - `data-note`：選用，在左側面板顯示的說明（例如「密碼輸入 wrong 會進入錯誤狀態」）
+   - `data-status="light"`：選用，深色畫面時讓狀態列變成白字
+   - `data-url="/cart"`：選用（web），瀏覽器網址列顯示的路徑
+4. 讓畫面**可以實際操作**：
+
+   | 屬性或函式 | 效果 |
+   |---|---|
+   | `data-go="<畫面 id>"` | 切換畫面（有返回堆疊與推入動畫） |
+   | `data-back` | 回到上一個畫面 |
+   | `data-open="<id>"` / `data-close` | 打開或關閉 sheet（`class="sheet"`）或 alert（`class="alert"`） |
+   | `data-toast="文字"` | 顯示 toast |
+   | `go(id)`、`back()`、`toast(text)`、`openOverlay(id)` | 在自訂的 `<script>` 中使用，例如依輸入內容決定進入成功或錯誤畫面 |
+
+   輸入框可以直接打字，`.switch`、`.segmented` 可以直接切換。
+   需要模擬規則（例如失敗次數、表單驗證）時，在檔案最後的 `<script>` 加上幾行邏輯即可。
+5. 模板內建的元件，可以直接使用，不要引入外部 CSS/JS/字型：
+   - 共用：`.card`、`.field`（加 `.error`）、`.btn`（`.block`、`.ghost`、`.plain`、`.destructive`、`disabled`）、`.badge`（`.ok`、`.bad`、`.warn`）、`.switch`、`.segmented`、`.empty`、`.sheet`、`.alert`、`.toast`
+   - App：`.nav`（`.bar`、`.back`、大標題 `h1`）、`.content`、`.section-label`、`.tabbar`、`.group` + `.cell`（`.link`、`.detail`）
+   - Web：`.site` > `.topbar`（`.brand`、`nav`、`.menu-btn`）+ `.page`；`.cols`（用 `style="--cols:3"` 指定欄數）、`.narrow`、`.only-desktop`、`.only-mobile`
+   - Web 畫面依**裝置寬度**自動切換版面：700px 以下是手機版（`.cols` 變單欄、導覽列收成選單）。需要更細的差異時，用 `@container vp (max-width: 700px) { … }`。
+
+## 情境示範（qa-scenarios）
+
+寫完 BDD 後，在檔案下方 `id="qa-scenarios"` 的 JSON 區塊，為主要情境寫示範。審閱時：
+- 左側點選情境，右側裝置會從 `start` 畫面開始，依步驟自動操作。
+- 播放中可以按「停止」，或再點一次情境標題停止。
+- 點任一步驟，會把前面的步驟快轉完成，再從那一步開始播放。
+- 播放完後，裝置可以繼續自由操作。
+- 裝置右上角的重置圖示（↺，或鍵盤 R）會停止示範、清除輸入與彈窗，回到第一個畫面，不需要重新整理頁面。
+
+```json
+[
+  { "id": "TC-2", "title": "錯誤密碼被拒絕", "start": "login",
+    "steps": [
+      { "kind": "given", "text": "我已註冊帳號 \"amy@example.com\"", "actions": [] },
+      { "kind": "when", "text": "我以密碼 \"wrong\" 登入", "actions": [{ "type": "#pw", "text": "wrong" }, { "tap": "#login-btn" }] },
+      { "kind": "then", "text": "系統顯示 \"帳號或密碼錯誤\"", "actions": [{ "expect": "#pw-field" }] }
+    ] }
+]
+```
+
+| 欄位 | 說明 |
+|---|---|
+| `id` / `title` | 情境編號與標題，與 `design.json` 的 `scenarios` 一致。CLI 會檢查 id 是否存在 |
+| `start` | 開始的畫面 id |
+| `device` | 選用（web）：`desktop` 或 `mobile` |
+| `steps[].kind` / `text` | `given`、`when`、`then` 與步驟文字，照抄 feature |
+| `steps[].actions` | 依序執行的動作 |
+
+| 動作 | 效果 |
+|---|---|
+| `{ "type": "#選擇器", "text": "…" }` | 逐字輸入 |
+| `{ "tap": "#選擇器" }` | 顯示點擊位置後點擊 |
+| `{ "expect": "#選擇器" }` | 以螢光框標示預期結果 |
+| `{ "go": "畫面 id" }` | 切換畫面 |
+| `{ "call": "函式名稱", "args": […] }` | 呼叫自訂函式，用來建立 Given 的狀態（例如已失敗 4 次） |
+| `{ "wait": 毫秒 }` | 停頓 |
+
+- 需要被操作或標示的元素要加 `id`。
+- 自訂狀態（例如計數器）請在 `window.onScenarioReset` 中重設，每次播放前會呼叫。
+- **每個情境都要有示範**，CLI 會檢查，缺少任何一個都會擋下。
+  - 看不到的規則（時間經過、次數累積、併發、後端計算），在原型中用小段 JS 模擬，再用 `call` 建立狀態。例如 `lockFor(899)` 模擬「14 分 59 秒前被鎖定」，`concurrentWrongLogins(3)` 模擬同時送出三個請求。然後照樣示範操作與結果。
+  - 只有**完全沒有畫面**的情境（例如純後端排程、資料匯出檔的內容），才寫成 `{ "id": "TC-9", "title": "…", "noUi": true, "reason": "排程在背景執行，沒有使用者畫面" }`。審閱時會列出來並顯示原因。
+  - 「很難做」不是 `noUi` 的理由。
+
+## 內容要求
+
+- **畫面來源**：依矩陣與狀態機推導。有設計稿時，版面與文案以設計稿為準；沒有設計稿時，依需求描述做合理的線框。
+- **必須涵蓋的狀態**：主流程每一步，加上需求與狀態機中出現的：
+  - 空狀態（沒有資料）
+  - 驗證錯誤（欄位錯誤訊息）
+  - 業務規則擋下（例如庫存不足、額度用完）
+  - 系統錯誤（服務失敗時使用者看到什麼）
+  - 權限不足或未登入
+  - 停用或處理中（按鈕停用、送出中）
+- **文案**：使用需求或設計稿上的真實文案，讓 PM 可以直接對。不確定的文案標上 `（待確認）`。
+- **資料**：用擬真資料，例如「Amy」「NT$350」，不用「foo」「test123」。
+- **對應情境**：每個畫面盡量標出對應的情境。沒有情境對應的畫面，代表可能缺少情境，或這個畫面是多餘的。
+
+## 限制
+
+- 單一 HTML 檔，所有 CSS/JS 都寫在檔案內，離線可以開啟。
+- 只模擬前端狀態與簡單規則，不呼叫真實 API。
+- 不複製產品程式碼，也不引用產品的資源檔。

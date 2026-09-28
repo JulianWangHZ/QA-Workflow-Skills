@@ -1,0 +1,21 @@
+name: Release
+
+# 依 Conventional Commits 自動開一個「發版 PR」：
+# feat → 次版號（0.1.0 → 0.2.0），fix → 修訂號（0.1.0 → 0.1.1），feat! 或 BREAKING CHANGE → 主版號。
+# 合併發版 PR 後，會更新 plugin.json、package.json 的版本與 CHANGELOG.md，並建立 tag 與 GitHub Release。
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

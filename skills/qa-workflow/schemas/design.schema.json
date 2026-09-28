@@ -1,0 +1,366 @@
+{
+  "title": "design.json — 用例設計的中間產物（測試矩陣、狀態機、技法、原型、自審）",
+  "type": "object",
+  "required": [
+    "version",
+    "scenarios",
+    "matrices",
+    "stateMachine",
+    "coverage",
+    "prototype",
+    "selfReview"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "file",
+          "title",
+          "priority",
+          "riskIds",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^TC-\\d+$"
+          },
+          "file": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "priority": {
+            "enum": [
+              "P0",
+              "P1",
+              "P2",
+              "P3"
+            ]
+          },
+          "riskIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^R-\\d+$"
+            }
+          },
+          "type": {
+            "enum": [
+              "positive",
+              "negative",
+              "boundary",
+              "error",
+              "permission",
+              "state",
+              "concurrency",
+              "integration",
+              "ui",
+              "performance",
+              "security",
+              "regression"
+            ]
+          }
+        }
+      }
+    },
+    "matrices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "technique",
+          "columns",
+          "rows"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^M-\\d+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "technique": {
+            "enum": [
+              "equivalence",
+              "boundary",
+              "decision-table",
+              "path",
+              "state-transition",
+              "role-permission",
+              "data-lifecycle",
+              "pairwise",
+              "error-guessing",
+              "concurrency",
+              "dependency-failure",
+              "environment"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "columns": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "rows": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "cells"
+              ],
+              "properties": {
+                "cells": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "caseIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^TC-\\d+$"
+                  }
+                },
+                "skipReason": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "stateMachine": {
+      "type": "object",
+      "required": [
+        "states",
+        "transitions"
+      ],
+      "properties": {
+        "entity": {
+          "type": "string"
+        },
+        "initial": {
+          "type": "string"
+        },
+        "states": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "transitions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "from",
+              "to",
+              "trigger",
+              "valid",
+              "caseIds"
+            ],
+            "properties": {
+              "from": {
+                "type": "string",
+                "minLength": 1
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1
+              },
+              "trigger": {
+                "type": "string",
+                "minLength": 1
+              },
+              "valid": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "caseIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^TC-\\d+$"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "required": [
+        "techniques"
+      ],
+      "properties": {
+        "techniques": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "technique",
+              "applicable"
+            ],
+            "properties": {
+              "technique": {
+                "enum": [
+                  "equivalence",
+                  "boundary",
+                  "decision-table",
+                  "path",
+                  "state-transition",
+                  "role-permission",
+                  "data-lifecycle",
+                  "pairwise",
+                  "error-guessing",
+                  "concurrency",
+                  "dependency-failure",
+                  "environment"
+                ]
+              },
+              "applicable": {
+                "type": "boolean"
+              },
+              "caseIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^TC-\\d+$"
+                }
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "deferredRisks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "riskId",
+              "reason"
+            ],
+            "properties": {
+              "riskId": {
+                "type": "string",
+                "pattern": "^R-\\d+$"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "prototype": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "platform": {
+          "enum": [
+            "app",
+            "web"
+          ]
+        },
+        "screens": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "caseIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^TC-\\d+$"
+                }
+              }
+            }
+          }
+        },
+        "skipReason": {
+          "type": "string"
+        }
+      }
+    },
+    "selfReview": {
+      "type": "object",
+      "required": [
+        "score",
+        "rounds"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "rounds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "breakdown": {
+          "type": "object"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "openQuestions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

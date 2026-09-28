@@ -1,0 +1,131 @@
+{
+  "title": "cases.json — 由 design/features/*.feature 解析產生（CLI 產生，勿手改）",
+  "type": "object",
+  "required": [
+    "version",
+    "cases"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "priority",
+          "riskIds",
+          "type",
+          "manual",
+          "feature",
+          "file",
+          "line",
+          "preconditions",
+          "steps",
+          "expected"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^TC-\\d+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "priority": {
+            "enum": [
+              "P0",
+              "P1",
+              "P2",
+              "P3"
+            ]
+          },
+          "riskIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^R-\\d+$"
+            }
+          },
+          "type": {
+            "enum": [
+              "positive",
+              "negative",
+              "boundary",
+              "error",
+              "permission",
+              "state",
+              "concurrency",
+              "integration",
+              "ui",
+              "performance",
+              "security",
+              "regression"
+            ]
+          },
+          "manual": {
+            "type": "boolean"
+          },
+          "smoke": {
+            "type": "boolean"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "feature": {
+            "type": "string"
+          },
+          "rule": {
+            "type": "string"
+          },
+          "file": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer"
+          },
+          "preconditions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "steps": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "expected": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "boundary": {
+            "type": "boolean"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "section": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

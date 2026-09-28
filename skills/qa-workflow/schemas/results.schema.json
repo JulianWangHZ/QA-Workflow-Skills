@@ -1,0 +1,167 @@
+{
+  "title": "results.json — 執行結果（qa run 產生，失敗分類由 qa-run skill 補上）",
+  "type": "object",
+  "required": [
+    "version",
+    "attempts",
+    "executions",
+    "results"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "attempts": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "executions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "attempt",
+          "layer",
+          "command",
+          "exitCode",
+          "log"
+        ],
+        "properties": {
+          "attempt": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "layer": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "command": {
+            "type": "string"
+          },
+          "exitCode": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "durationMs": {
+            "type": "integer"
+          },
+          "log": {
+            "type": "string"
+          },
+          "junit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "taskId",
+          "status"
+        ],
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "pattern": "^T-\\d+$"
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "failed",
+              "blocked",
+              "skipped",
+              "not-run"
+            ]
+          },
+          "classification": {
+            "enum": [
+              "test-defect",
+              "product-defect",
+              "environment",
+              "unclear-requirement"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "durationMs": {
+            "type": "integer"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "repairs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "attempt",
+          "taskId",
+          "change"
+        ],
+        "properties": {
+          "attempt": {
+            "type": "integer"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "change": {
+            "type": "string",
+            "minLength": 1
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "oracleAudit": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "taskId",
+          "mutation",
+          "turnedRed"
+        ],
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "pattern": "^T-\\d+$"
+          },
+          "mutation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "turnedRed": {
+            "type": "boolean"
+          },
+          "log": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "language": "zh-TW",
+  "profiles": [
+    {
+      "id": "ts-playwright-bdd",
+      "language": "typescript",
+      "platforms": [
+        "web"
+      ],
+      "style": "typescript-playwright.md",
+      "layers": [
+        "e2e"
+      ],
+      "bdd": {
+        "framework": "playwright-bdd",
+        "featuresDir": "tests/e2e/features",
+        "stepsDir": "tests/e2e/steps"
+      }
+    },
+    {
+      "id": "ts-webdriverio-appium",
+      "language": "typescript",
+      "platforms": [
+        "app"
+      ],
+      "style": "typescript-webdriverio.md",
+      "layers": [
+        "e2e-ios",
+        "e2e-android"
+      ],
+      "bdd": {
+        "framework": "wdio-cucumber",
+        "featuresDir": "app/features",
+        "stepsDir": "app/tests/steps"
+      }
+    }
+  ],
+  "layers": {
+    "unit": {
+      "command": "npx vitest run --reporter=default --reporter=junit --outputFile=.qa/tmp/unit-junit.xml",
+      "junit": ".qa/tmp/unit-junit.xml",
+      "dir": "tests/unit"
+    },
+    "api": {
+      "command": "pytest tests/api --junitxml=.qa/tmp/api-junit.xml",
+      "junit": ".qa/tmp/api-junit.xml",
+      "dir": "tests/api",
+      "env": {
+        "API_BASE_URL": "http://localhost:3000"
+      }
+    },
+    "e2e": {
+      "command": "npx bddgen && npx playwright test --reporter=line,junit",
+      "junit": ".qa/tmp/e2e-junit.xml",
+      "dir": "tests/e2e",
+      "env": {
+        "PLAYWRIGHT_JUNIT_OUTPUT_NAME": ".qa/tmp/e2e-junit.xml"
+      },
+      "timeoutSec": 3600
+    },
+    "e2e-ios": {
+      "command": "npx wdio run wdio.ios.conf.ts",
+      "junit": ".qa/tmp/e2e-ios",
+      "env": {
+        "QA_JUNIT_DIR": ".qa/tmp/e2e-ios"
+      }
+    },
+    "e2e-android": {
+      "command": "npx wdio run wdio.android.conf.ts",
+      "junit": ".qa/tmp/e2e-android",
+      "env": {
+        "QA_JUNIT_DIR": ".qa/tmp/e2e-android"
+      }
+    }
+  },
+  "repair": {
+    "maxLoops": 3,
+    "allowedPaths": [
+      "tests/**"
+    ]
+  },
+  "caseDesign": {
+    "minReviewScore": 85,
+    "maxReviewRounds": 3
+  },
+  "bdd": {
+    "framework": "playwright-bdd",
+    "featuresDir": "tests/e2e/features",
+    "stepsDir": "tests/e2e/steps"
+  },
+  "review": {
+    "checks": [
+      {
+        "name": "bdd-steps",
+        "command": "npx bddgen"
+      },
+      {
+        "name": "check",
+        "command": "npm run check"
+      }
+    ],
+    "maxChunkLines": 800
+  },
+  "integrations": {
+    "issueTracker": "atlassian",
+    "design": "figma",
+    "database": ""
+  },
+  "report": {
+    "dir": ".qa/reports"
+  }
+}

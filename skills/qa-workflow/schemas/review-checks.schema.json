@@ -1,0 +1,179 @@
+{
+  "title": "review-checks.json — 代碼審查的確定性檢查（由 qa review-checks 產生，勿手改）",
+  "type": "object",
+  "required": [
+    "version",
+    "ranAt",
+    "passed",
+    "checks",
+    "scan",
+    "scope"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "ranAt": {
+      "type": "string"
+    },
+    "passed": {
+      "type": "boolean"
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "status"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pass",
+              "fail",
+              "skip"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          },
+          "log": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "scan": {
+      "type": "object",
+      "required": [
+        "files",
+        "hits"
+      ],
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "hits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "rule",
+              "level",
+              "file",
+              "line"
+            ],
+            "properties": {
+              "rule": {
+                "type": "string"
+              },
+              "level": {
+                "enum": [
+                  "fail",
+                  "warn"
+                ]
+              },
+              "file": {
+                "type": "string"
+              },
+              "line": {
+                "type": "integer"
+              },
+              "text": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "required": [
+        "files",
+        "diffFile",
+        "chunks"
+      ],
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "kind",
+              "lines"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "test",
+                  "product"
+                ]
+              },
+              "lines": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "diffFile": {
+          "type": "string"
+        },
+        "diffLines": {
+          "type": "integer"
+        },
+        "chunks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "diffFile",
+              "lines",
+              "files",
+              "features"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "diffFile": {
+                "type": "string"
+              },
+              "lines": {
+                "type": "integer"
+              },
+              "files": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "features": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

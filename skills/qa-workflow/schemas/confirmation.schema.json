@@ -1,0 +1,37 @@
+{
+  "title": "confirmation.json — 人工確認紀錄（由 qa confirm 產生，勿手改）",
+  "type": "object",
+  "required": [
+    "version",
+    "confirmedAt",
+    "confirmedBy",
+    "designHash",
+    "caseIds"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "confirmedAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "confirmedBy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "note": {
+      "type": "string"
+    },
+    "caseIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "designHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

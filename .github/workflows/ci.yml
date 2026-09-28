@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Run tests
+        run: npm test
+      - name: Check manifests are valid JSON and versions agree
+        run: |
+          node -e '
+            const read = (f) => JSON.parse(require("fs").readFileSync(f, "utf8"));
+            const plugin = read(".claude-plugin/plugin.json");
+            const pkg = read("package.json");
+            read(".claude-plugin/marketplace.json");
+            if (plugin.version !== pkg.version) {
+              console.error(`version mismatch: plugin.json ${plugin.version} vs package.json ${pkg.version}`);
+              process.exit(1);
+            }
+          '

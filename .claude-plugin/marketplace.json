@@ -1,0 +1,14 @@
+{
+  "name": "qa-workflow",
+  "owner": {
+    "name": "QA-Workflow-Skills"
+  },
+  "description": "End-to-end QA acceptance workflow for Claude Code",
+  "plugins": [
+    {
+      "name": "qa-workflow",
+      "source": "./",
+      "description": "Context → risk analysis → case design → ★ sign-off → scripts → run & repair → code review → report"
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+<script>
+  (() => {
+    const saved = localStorage.getItem('qa-theme');
+    const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+{{theme}}
+
+.verdict { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s6); align-items: end; padding: var(--s6) 0; border-bottom: 1px solid var(--ink); }
+.verdict .word { font-size: 44px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; }
+:root[data-theme="dark"] .verdict.go .word span { background: var(--marker); padding: 0 8px; border-radius: 4px; }
+.verdict.go .word span { color: var(--on-marker); background: linear-gradient(100deg, transparent 0 1%, var(--marker) 3% 96%, transparent 99%) no-repeat 0 70% / 100% 52%; }
+.verdict.conditional .word { color: var(--ink); }
+.verdict.no-go .word { color: var(--flare-ink); }
+.verdict.incomplete .word { color: var(--slate); }
+.verdict .why { margin: var(--s3) 0 0; color: var(--slate); max-width: 44em; }
+.verdict .link { font-size: var(--fs-sm); white-space: nowrap; }
+.status { font-size: var(--fs-sm); font-weight: 600; white-space: nowrap; }
+.status.passed { color: var(--marker-ink); }
+.status.failed, .status.uncovered { color: var(--flare-ink); }
+.status.blocked, .status.not-run, .status.skipped, .status.manual { color: var(--slate); font-weight: 500; }
+.figures { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
+.figures div { padding: 14px 16px 4px 0; }
+.figures div + div { padding-left: 16px; border-left: 1px solid var(--rule); }
+.figures b { display: block; font-family: var(--mono); font-weight: 500; font-size: 28px; line-height: 1.1; }
+.figures span { display: block; margin-top: 6px; font-size: var(--fs-sm); color: var(--slate); }
+details summary { cursor: pointer; color: var(--slate); font-size: var(--fs-sm); }
+@media (max-width: 860px) { .verdict { grid-template-columns: 1fr; } .figures { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <div class="top"><span class="kicker">{{kicker}}</span><span class="right"><span class="faint mono">{{runId}}</span>{{themeToggle}}</span></div>
+    <h1>{{heading}}</h1>
+  </div>
+</header>
+<main class="wrap">
+  <section class="verdict {{verdictClass}}">
+    <div><div class="word"><span>{{verdictLabel}}</span></div><p class="why">{{verdictNote}}</p></div>
+    {{reviewLink}}
+  </section>
+  {{content}}
+</main>
+<footer class="wrap faint" style="padding:var(--s5) var(--s6) var(--s6);font-size:var(--fs-xs);border-top:1px solid var(--rule)">{{meta}}</footer>
+<script>
+  document.querySelectorAll('.theme-toggle').forEach((btn) => btn.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('qa-theme', next);
+  }));
+</script>
+</body>
+</html>

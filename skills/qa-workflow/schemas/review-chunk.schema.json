@@ -1,0 +1,194 @@
+{
+  "title": "review/chunk-N.json — 單一分塊的審查結果（由審查 subagent 寫入）",
+  "type": "object",
+  "required": [
+    "version",
+    "chunk",
+    "checksHash",
+    "breakdown",
+    "strengths",
+    "findings",
+    "suggestions"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "chunk": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "checksHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "breakdown": {
+      "type": "object",
+      "required": [
+        "fidelity",
+        "reliability",
+        "style",
+        "productRisk",
+        "maintainability"
+      ],
+      "properties": {
+        "fidelity": {
+          "type": "object",
+          "required": [
+            "score",
+            "note"
+          ],
+          "properties": {
+            "score": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20
+            },
+            "note": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "reliability": {
+          "type": "object",
+          "required": [
+            "score",
+            "note"
+          ],
+          "properties": {
+            "score": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20
+            },
+            "note": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "style": {
+          "type": "object",
+          "required": [
+            "score",
+            "note"
+          ],
+          "properties": {
+            "score": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20
+            },
+            "note": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "productRisk": {
+          "type": "object",
+          "required": [
+            "score",
+            "note"
+          ],
+          "properties": {
+            "score": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20
+            },
+            "note": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "maintainability": {
+          "type": "object",
+          "required": [
+            "score",
+            "note"
+          ],
+          "properties": {
+            "score": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20
+            },
+            "note": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "strengths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "severity",
+          "category",
+          "title",
+          "file"
+        ],
+        "properties": {
+          "severity": {
+            "enum": [
+              "critical",
+              "important",
+              "minor"
+            ]
+          },
+          "category": {
+            "enum": [
+              "fidelity",
+              "reliability",
+              "style",
+              "product-risk",
+              "maintainability"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "file": {
+            "type": "string",
+            "minLength": 1
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "detail": {
+            "type": "string"
+          },
+          "suggestion": {
+            "type": "string"
+          },
+          "relatedCaseIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "suggestions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

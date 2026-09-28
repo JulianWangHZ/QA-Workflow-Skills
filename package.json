@@ -1,0 +1,14 @@
+{
+  "name": "qa-workflow",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "qa-workflow plugin 的 CLI 測試入口",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test \"skills/qa-workflow/test/*.test.mjs\""
+  },
+  "license": "MIT"
+}

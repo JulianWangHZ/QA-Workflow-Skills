@@ -1,0 +1,60 @@
+{
+  "title": "tasks/<feature>.json — 單一 feature 的腳本產出（由腳本 subagent 寫入，qa tasks-merge 合併）",
+  "type": "object",
+  "required": [
+    "version",
+    "feature",
+    "tasks"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "feature": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "caseId",
+          "layer",
+          "file",
+          "testName"
+        ],
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "pattern": "^TC-\\d+$"
+          },
+          "layer": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "file": {
+            "type": "string",
+            "minLength": 1
+          },
+          "testName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "assertions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "sharedRequests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

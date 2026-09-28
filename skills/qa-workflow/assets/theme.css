@@ -1,0 +1,205 @@
+/*
+  qa-workflow 共用設計系統：用例審閱頁與最終報告共用。
+  概念：驗收簽核文件。白紙、細線分隔、左側標籤欄；唯一的強調是「螢光筆劃記」。
+*/
+:root {
+  /* 色彩 */
+  /* 淺色：文字對白底 ≥ 6:1（WCAG AA 小字需 4.5:1）；分隔線加深到一眼可辨 */
+  --ink: #111415;
+  --ink-2: #252b2e;
+  --slate: #34434c;
+  --slate-2: #56656e;
+  --paper: #ffffff;
+  --wash: #f3f5f2;
+  --rule: #d3d8d4;
+  --rule-2: #a9b2ad;
+  --marker: #d4f36b;
+  --marker-soft: #eefac8;
+  --marker-ink: #3d5200;
+  --flare: #e8651a;
+  --flare-soft: #fdeee4;
+  --flare-ink: #a8430a;
+  --on-marker: #16191a;
+  --bar-bg: rgba(255, 255, 255, 0.94);
+  color-scheme: light;
+
+  /* 字體 */
+  --font: "Helvetica Neue", -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --fs-xs: 11px;
+  --fs-sm: 12.5px;
+  --fs-md: 14px;
+  --fs-lg: 17px;
+  --fs-xl: 24px;
+  --fs-2xl: 34px;
+
+  /* 間距與形狀 */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 72px;
+  --radius: 6px;
+  --label-col: 208px;
+  --page: 1240px;
+}
+
+/* 深色模式：由 <html data-theme="dark"> 切換 */
+:root[data-theme="dark"] {
+  --ink: #e8ecea;
+  --ink-2: #cfd6d3;
+  --slate: #9fb0b9;
+  --slate-2: #6d7c84;
+  --paper: #111415;
+  --wash: #191d1e;
+  --rule: #262c2e;
+  --rule-2: #3a4245;
+  --marker: #d4f36b;
+  --marker-soft: rgba(212, 243, 107, 0.13);
+  --marker-ink: #cdef63;
+  --flare: #f07a33;
+  --flare-soft: rgba(240, 122, 51, 0.14);
+  --flare-ink: #ff9c5e;
+  --bar-bg: rgba(17, 20, 21, 0.92);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 400 var(--fs-md)/1.65 var(--font); -webkit-font-smoothing: antialiased;
+  font-feature-settings: "tnum" 1;
+}
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
+.mono, code { font-family: var(--mono); font-size: 0.92em; letter-spacing: -0.01em; }
+.muted { color: var(--slate); }
+.faint { color: var(--slate-2); }
+.wrap { max-width: var(--page); margin: 0 auto; padding: 0 var(--s6); }
+
+/* ---------- 螢光筆劃記（唯一的強調元素） ---------- */
+.mark {
+  background: linear-gradient(100deg, transparent 0 1%, var(--marker) 3% 96%, transparent 99%) no-repeat 0 62% / 100% 58%;
+  padding: 0 2px; margin: 0 -2px; color: var(--on-marker);
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+.flare-text { color: var(--flare-ink); }
+/* 深色模式：半高的劃記會讓深色文字的上半部落在深色底上，改成整塊實心底 */
+:root[data-theme="dark"] .mark {
+  background: var(--marker); padding: 0 4px; margin: 0; border-radius: 2px;
+}
+
+/* ---------- 刊頭 ---------- */
+.masthead { border-bottom: 1px solid var(--rule); background: var(--paper); }
+.masthead .top {
+  display: flex; justify-content: space-between; align-items: center; gap: var(--s4);
+  padding: var(--s5) 0 0; font-size: var(--fs-sm); color: var(--slate);
+}
+.masthead .kicker { font-weight: 600; color: var(--ink); letter-spacing: 0.02em; }
+.masthead .kicker::before {
+  content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px;
+  background: var(--marker); border: 1px solid var(--ink);
+}
+.masthead h1 {
+  margin: var(--s4) 0 var(--s5); max-width: 30em;
+  font-size: var(--fs-2xl); line-height: 1.25; font-weight: 700; letter-spacing: -0.01em;
+}
+.stamp {
+  display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 10px;
+  border: 1.5px solid currentColor; border-radius: 999px; font-size: var(--fs-sm); font-weight: 600; white-space: nowrap;
+}
+.stamp::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.stamp.pending { color: var(--flare-ink); }
+.stamp.confirmed { color: var(--marker-ink); background: var(--marker-soft); }
+.stamp.stale { color: #fff; background: var(--flare); border-color: var(--flare); }
+.masthead .right { display: flex; align-items: center; gap: var(--s3); }
+.theme-toggle {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--rule-2); border-radius: 999px;
+  background: var(--paper); color: var(--slate); font: inherit; font-size: var(--fs-sm); cursor: pointer;
+}
+.theme-toggle:hover { color: var(--ink); border-color: var(--ink); }
+.theme-toggle svg { width: 14px; height: 14px; }
+.theme-toggle .sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .moon { display: none; }
+
+/* ---------- 分頁 ---------- */
+.tabs-bar { position: sticky; top: 0; z-index: 20; background: var(--bar-bg); backdrop-filter: blur(8px); border-bottom: 1px solid var(--rule); }
+nav.tabs { display: flex; gap: var(--s6); overflow-x: auto; scrollbar-width: none; }
+nav.tabs a {
+  position: relative; padding: 14px 0 13px; font-size: var(--fs-md); color: var(--slate);
+  text-decoration: none; white-space: nowrap;
+}
+nav.tabs a .n { font-family: var(--mono); font-size: var(--fs-xs); color: var(--slate-2); margin-right: 6px; }
+nav.tabs a:hover { color: var(--ink); }
+nav.tabs a.on { color: var(--ink); font-weight: 600; }
+nav.tabs a.on::after {
+  content: ""; position: absolute; left: -3px; right: -3px; bottom: -1px; height: 5px; background: var(--marker);
+}
+
+/* ---------- 頁面與段落（左標籤欄 + 內容） ---------- */
+main { padding-bottom: var(--s8); }
+.page { display: none; }
+.page.on { display: block; animation: rise 0.28s ease-out; }
+@keyframes rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .page.on { animation: none; } }
+
+.intro { padding: var(--s6) 0 var(--s4); max-width: 46em; color: var(--slate); font-size: var(--fs-md); }
+.row {
+  display: grid; grid-template-columns: var(--label-col) minmax(0, 1fr); gap: var(--s6);
+  padding: var(--s6) 0; border-top: 1px solid var(--rule-2); /* 段落之間比表格列更明顯 */
+}
+.row:first-of-type { border-top: 0; }
+.row-label h2 { margin: 0; font-size: var(--fs-md); font-weight: 600; letter-spacing: 0.01em; }
+.row-label p { margin: 6px 0 0; font-size: var(--fs-sm); color: var(--slate); line-height: 1.55; }
+.row-label .count { display: block; margin-top: var(--s3); font-family: var(--mono); font-size: var(--fs-sm); color: var(--ink); }
+.row-body { min-width: 0; }
+@media (max-width: 860px) {
+  .wrap { padding: 0 var(--s4); }
+  .row { grid-template-columns: 1fr; gap: var(--s3); }
+  .masthead h1 { font-size: var(--fs-xl); }
+}
+
+/* ---------- 表格 ---------- */
+table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+th {
+  text-align: left; font-weight: 500; color: var(--slate-2); font-size: var(--fs-xs); letter-spacing: 0.04em;
+  padding: 0 var(--s3) var(--s2); border-bottom: 1px solid var(--ink); white-space: nowrap;
+}
+td { padding: 11px var(--s3); border-bottom: 1px solid var(--rule); vertical-align: top; }
+th:first-child, td:first-child { padding-left: 0; }
+th:last-child, td:last-child { padding-right: 0; }
+tr.skip td { color: var(--slate-2); }
+tr:target td, tr.target td { background: var(--marker-soft); }
+td.id { font-family: var(--mono); white-space: nowrap; color: var(--slate); }
+td ul { margin: 0; padding-left: 1.1em; }
+
+/* ---------- 標籤與連結 ---------- */
+.tag {
+  display: inline-block; padding: 0 7px; border: 1px solid var(--rule-2); border-radius: 4px;
+  font-size: var(--fs-xs); line-height: 20px; color: var(--slate); white-space: nowrap; margin: 0 4px 2px 0;
+}
+.tag.p0 { border-color: var(--flare); color: var(--flare-ink); font-weight: 600; }
+.tag.p1 { border-color: var(--ink); color: var(--ink); font-weight: 600; }
+.tag.smoke { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.tag.label { border-color: transparent; background: var(--wash); color: var(--ink-2); }
+.tag.boundary { border-color: var(--flare); color: var(--flare-ink); }
+.tag.manual { border-style: dashed; }
+a.ref {
+  font-family: var(--mono); font-size: var(--fs-sm); color: var(--ink); text-decoration: none;
+  border-bottom: 1px solid var(--rule-2); margin-right: 8px; white-space: nowrap;
+}
+a.ref:hover { border-bottom-color: var(--ink); background: var(--marker-soft); }
+.status-ok { color: var(--marker-ink); font-weight: 600; }
+.status-bad { color: var(--flare-ink); font-weight: 600; }
+.status-na { color: var(--slate-2); }
+
+/* ---------- 備註（待釐清、警告） ---------- */
+.notes { list-style: none; margin: 0; padding: 0; }
+.notes li { position: relative; padding: 8px 0 8px 18px; border-bottom: 1px solid var(--rule); }
+.notes li:last-child { border-bottom: 0; }
+.notes li::before { content: ""; position: absolute; left: 0; top: 16px; width: 8px; height: 2px; background: var(--flare); }
+.notes.neutral li::before { background: var(--slate-2); }
+
+@media print {
+  .tabs-bar, .toolbar, button.copy { display: none !important; }
+  .page { display: block !important; break-before: page; }
+  .proto-frame { display: none; }
+}

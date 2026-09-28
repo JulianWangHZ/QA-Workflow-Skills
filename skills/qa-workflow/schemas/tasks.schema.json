@@ -1,0 +1,59 @@
+{
+  "title": "tasks.json — 用例與測試腳本的對照表",
+  "type": "object",
+  "required": [
+    "version",
+    "designHash",
+    "tasks"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "designHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "caseId",
+          "layer",
+          "file",
+          "testName"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^T-\\d+$"
+          },
+          "caseId": {
+            "type": "string",
+            "pattern": "^TC-\\d+$"
+          },
+          "layer": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "file": {
+            "type": "string",
+            "minLength": 1
+          },
+          "testName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "assertions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
