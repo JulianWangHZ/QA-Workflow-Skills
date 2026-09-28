@@ -1,6 +1,6 @@
 {
   "name": "qa-workflow",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "End-to-end QA acceptance workflow: context → risk analysis → case design → ★ sign-off → scripts → run & repair → code review → report",
   "author": {
     "name": "QA-Workflow-Skills"

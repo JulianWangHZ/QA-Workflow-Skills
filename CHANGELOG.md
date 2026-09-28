@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.2.0...v0.3.0) (2026-09-28)
+
+
+### Features
+
+* report progress before and after every subagent dispatch ([#2](https://github.com/JulianWangHZ/QA-Workflow-Skills/issues/2)) ([497af32](https://github.com/JulianWangHZ/QA-Workflow-Skills/commit/497af322d375cf3cede5d991e6f795ca59836680))
+
 ## [0.2.0](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.1.0...v0.2.0) (2026-09-28)
 
 

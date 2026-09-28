@@ -1,6 +1,6 @@
 {
   "name": "qa-workflow",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "qa-workflow plugin 的 CLI 測試入口",
