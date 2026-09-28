@@ -58,14 +58,32 @@ node "<本 skill 目錄>/bin/qa.mjs"
 | review | `qa review-checks` → 每一塊派一個 subagent 並行 → `qa review-merge`（見下方） | `review-checks.json`、`review.json` | `qa gate review` |
 | report | 你直接執行 `qa report`，再讀 `summary.md` 回報 | `report.html`、`summary.md` | 推進到 done |
 
+### 進度回報
+
+subagent 執行時，使用者畫面上看不到任何過程，很容易以為卡住。所以每次派發前後都要在聊天中輸出一行進度，不能省略：
+
+| 時機 | 格式 |
+|---|---|
+| 派發前 | `▶ [3/8 用例設計] 派設計 subagent（2 個 feature），預計 3–5 分鐘` |
+| 回傳後 | `✓ [3/8 用例設計] 設計完成：14 個情境。下一步：評審` |
+| gate | `✓ gate cases 通過`，或 `✗ gate cases 失敗：<一句原因>，重派第 1/2 次` |
+| 並行 | 派出時逐一列出每個 subagent 負責什麼；回傳時逐一回報，例如 `✓ planner 2/4：checkout 完成` |
+| 等使用者 | `⏸ 等你：<要你做的事>`，讓使用者分得清是在跑還是在等 |
+
+1. 進度行要在呼叫 Agent 工具**之前**輸出，使用者才看得到。
+2. 階段編號：context 1、risk 2、cases 3、confirm 4、scripts 5、run 6、review 7、report 8。
+3. 階段內有多個步驟時（設計 → 評審、planner → generator、run → healer → 防假綠），每個步驟都各自回報。
+4. 並行派發時，Agent 工具支援背景執行就用背景執行，每個回來就回報一行；不支援時，全部回來後一次列出各自的結果。
+5. 時間依規模估一個範圍即可。只寫一行，不貼產物內容，避免主對話 context 膨脹。
+
 ### 每一輪
 
 1. `qa status` 取得目前的 stage。
-2. 用 Agent 工具派一個 subagent，prompt 使用下方的「派發範本」。
-3. subagent 回傳後，執行該 stage 的 `qa gate`。
+2. 輸出「派發前」進度行，再用 Agent 工具派一個 subagent，prompt 使用下方的「派發範本」。
+3. subagent 回傳後，輸出「回傳後」進度行，再執行該 stage 的 `qa gate`，並回報結果。
 4. gate 通過 → 回到步驟 1，不需要問使用者。
 5. gate 失敗 → 把錯誤原文放進 prompt，再派一次，最多 2 次。
-6. 仍然失敗，或 subagent 回傳 `needs-user` → 停下來，向使用者說明卡在哪裡，只問一個具體的問題。拿到答案後，再派一次。
+6. 仍然失敗，或 subagent 回傳 `needs-user` → 輸出 `⏸` 進度行，說明卡在哪裡，只問一個具體的問題。拿到答案後，再派一次。
 
 `⚠` 警告不擋流程，但要記下來，在確認點或最終報告時告訴使用者。
 
