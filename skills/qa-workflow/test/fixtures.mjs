@@ -22,7 +22,7 @@ export const TECHNIQUES = [
 
 const techniqueChecklist = () => TECHNIQUES.map((technique) =>
   technique === 'path'
-    ? { technique, applicable: true, caseIds: ['TC-1'] }
+    ? { technique, applicable: true, caseIds: ['TC-1', 'TC-2'] }
     : { technique, applicable: false, reason: '範例不適用' });
 
 export const FEATURE = `# 註：登入相關情境

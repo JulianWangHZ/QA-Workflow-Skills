@@ -105,7 +105,7 @@
 @media (max-width: 860px) { .risk-list li { grid-template-columns: 44px 34px 1fr; } .risk-list li > :nth-child(4), .risk-list .state { grid-column: 3; text-align: left; } }
 
 .techniques { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--ink); border-left: 1px solid var(--rule); }
-.techniques > div { padding: 14px 14px 16px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); min-height: 118px; }
+.techniques > div { min-width: 0; overflow-wrap: anywhere; padding: 14px 14px 16px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); min-height: 118px; }
 .techniques h3 { margin: 0; font-size: var(--fs-md); font-weight: 600; }
 .techniques .en { display: block; font-family: var(--mono); font-size: var(--fs-xs); color: var(--slate-2); margin-top: 2px; }
 .techniques p { margin: 10px 0 0; font-size: var(--fs-sm); line-height: 1.5; }
