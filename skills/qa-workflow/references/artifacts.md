@@ -20,7 +20,7 @@
     ├── confirmation.json    # ★ 確認紀錄與設計 hash（只由 CLI 產生）
     ├── plan/                # 5 planner 的計畫分檔（qa plan-merge 合併）
     ├── plan.json            # 5 每個 @auto 情境的可行性、證據、前置資料、oracle
-    ├── tasks/               # 5 並行產生時，各 feature 的 task 分檔（qa tasks-merge 合併）
+    ├── tasks/               # 5 多個 feature 時，各 feature 的 task 分檔（qa tasks-merge 合併）
     ├── tasks.json           # 5 情境 ↔ 測試對照
     ├── results.json         # 4 執行結果、失敗分類、修復紀錄
     ├── logs/attempt-N-<layer>.log

@@ -10,8 +10,7 @@ description: >
 
 # QA Workflow — 調度者
 
-你是流程的調度者，不是執行者：**每個自動階段都派 subagent 執行對應的子 skill，你負責推進、把關、與使用者溝通。**
-你自己不寫用例、不寫測試腳本、不判斷測試結果，也不讀程式碼或 log。
+你負責推進整個流程：**在主對話中依序載入每個階段的子 skill 並親自執行**，每一步都回報進度，並在 gate 把關、與使用者溝通。
 
 ```
 context → risk → cases → ★confirm → scripts → run → review → report → done
@@ -42,96 +41,78 @@ node "<本 skill 目錄>/bin/qa.mjs"
    3. 需要沿用上一輪時加 `--mode`，見下方「模式」。
 4. 若有進行中的 run：告訴使用者目前在哪個階段，從該階段接續。
 
-## 主迴圈：自動階段交給 subagent
+## 主迴圈：在主對話中依序執行
 
-主對話只做四件事：調度、執行 `qa gate`、和使用者溝通、合併結果。
-**不要在主對話中讀程式碼、log、diff 或完整的產物**，這些交給 subagent 處理。這樣走完 8 個階段，主對話的 context 也不會累積到爆掉。
+所有階段都在主對話中執行：用 Skill 工具載入對應的子 skill，照著它做完，再執行 gate。
+不派 subagent。這樣使用者能即時看到每一步在做什麼，也不會因為子代理重複讀取上下文而多耗時間與 token。
 
-| stage | 執行者 | 主要產物 | 完成後 |
+| stage | 執行方式 | 主要產物 | 完成後 |
 |---|---|---|---|
-| context | subagent → `qa-context` | `context.json` | `qa gate context` |
-| risk | subagent → `qa-risk` | `risks.json` | `qa gate risk` |
-| cases | subagent → `qa-cases`，加上評審 subagent（見下方） | `design.json`、`design/features/*.feature`、`design/prototype.html` | `qa gate cases` |
-| confirm | **你 + 使用者（留在主對話）** | `confirmation.json` | `qa confirm --by <名字>` |
-| scripts | planner subagent（實際操作、判定可行性）→ generator subagent，都可以依 feature 並行（見下方） | `evidence/`、`plan.json`、測試檔、`tasks.json` | `qa gate scripts` |
-| run | 執行 subagent → healer subagent → 防假綠檢查（見下方） | `results.json` | `qa gate run` |
-| review | `qa review-checks` → 每一塊派一個 subagent 並行 → `qa review-merge`（見下方） | `review-checks.json`、`review.json` | `qa gate review` |
-| report | 你直接執行 `qa report`，再讀 `summary.md` 回報 | `report.html`、`summary.md` | 推進到 done |
+| context | 載入 `qa-context` | `context.json` | `qa gate context` |
+| risk | 載入 `qa-risk` | `risks.json` | `qa gate risk` |
+| cases | 載入 `qa-cases`：設計 → 評審 → 修正（見下方） | `design.json`、`design/features/*.feature`、`design/prototype.html` | `qa gate cases` |
+| confirm | **你 + 使用者** | `confirmation.json` | `qa confirm --by <名字>` |
+| scripts | 載入 `qa-scripts`：逐個 feature 做 planner → `qa plan-merge` → 逐個 feature 做 generator（見下方） | `evidence/`、`plan.json`、測試檔、`tasks.json` | `qa gate scripts` |
+| run | 載入 `qa-run`：執行 → healer → 防假綠檢查（見下方） | `results.json` | `qa gate run` |
+| review | `qa review-checks` → 載入 `qa-code-review`，逐塊審查 → `qa review-merge`（見下方） | `review-checks.json`、`review.json` | `qa gate review` |
+| report | 直接執行 `qa report`，再讀 `summary.md` 回報 | `report.html`、`summary.md` | 推進到 done |
 
 ### 進度回報
 
-subagent 執行時，使用者畫面上看不到任何過程，很容易以為卡住。所以每次派發前後都要在聊天中輸出一行進度，不能省略：
+每個步驟開始與結束都在聊天中輸出一行進度，讓使用者分得清現在在做什麼、做到哪裡：
 
 | 時機 | 格式 |
 |---|---|
-| 派發前 | `▶ [3/8 用例設計] 派設計 subagent（2 個 feature），預計 3–5 分鐘` |
-| 回傳後 | `✓ [3/8 用例設計] 設計完成：14 個情境。下一步：評審` |
-| gate | `✓ gate cases 通過`，或 `✗ gate cases 失敗：<一句原因>，重派第 1/2 次` |
-| 並行 | 派出時逐一列出每個 subagent 負責什麼；回傳時逐一回報，例如 `✓ planner 2/4：checkout 完成` |
+| 開始 | `▶ [3/8 用例設計] 開始設計（2 個 feature），預計 3–5 分鐘` |
+| 完成 | `✓ [3/8 用例設計] 設計完成：14 個情境。下一步：評審` |
+| gate | `✓ gate cases 通過`，或 `✗ gate cases 失敗：<一句原因>，修正第 1/2 次` |
+| 逐項處理 | 每處理完一個 feature 或分塊就回報一行，例如 `✓ planner 2/4：checkout 完成` |
 | 等使用者 | `⏸ 等你：<要你做的事>`，讓使用者分得清是在跑還是在等 |
 
-1. 進度行要在呼叫 Agent 工具**之前**輸出，使用者才看得到。
-2. 階段編號：context 1、risk 2、cases 3、confirm 4、scripts 5、run 6、review 7、report 8。
-3. 階段內有多個步驟時（設計 → 評審、planner → generator、run → healer → 防假綠），每個步驟都各自回報。
-4. 並行派發時，Agent 工具支援背景執行就用背景執行，每個回來就回報一行；不支援時，全部回來後一次列出各自的結果。
-5. 時間依規模估一個範圍即可。只寫一行，不貼產物內容，避免主對話 context 膨脹。
+1. 階段編號：context 1、risk 2、cases 3、confirm 4、scripts 5、run 6、review 7、report 8。
+2. 階段內有多個步驟時（設計 → 評審、planner → generator、run → healer → 防假綠），每個步驟都各自回報。
+3. 時間依規模估一個範圍即可。只寫一行，不貼產物內容。
 
 ### 每一輪
 
 1. `qa status` 取得目前的 stage。
-2. 輸出「派發前」進度行，再用 Agent 工具派一個 subagent，prompt 使用下方的「派發範本」。
-3. subagent 回傳後，輸出「回傳後」進度行，再執行該 stage 的 `qa gate`，並回報結果。
+2. 輸出「開始」進度行，用 Skill 工具載入該 stage 的子 skill，依它的流程執行。
+3. 做完後輸出「完成」進度行，再執行該 stage 的 `qa gate`，並回報結果。
 4. gate 通過 → 回到步驟 1，不需要問使用者。
-5. gate 失敗 → 把錯誤原文放進 prompt，再派一次，最多 2 次。
-6. 仍然失敗，或 subagent 回傳 `needs-user` → 輸出 `⏸` 進度行，說明卡在哪裡，只問一個具體的問題。拿到答案後，再派一次。
+5. gate 失敗 → 依錯誤原文修正後重跑 gate，最多 2 次。
+6. 仍然失敗，或卡在需要使用者提供的資訊 → 輸出 `⏸` 進度行，說明卡在哪裡，只問一個具體的問題。拿到答案後繼續。
 
 `⚠` 警告不擋流程，但要記下來，在確認點或最終報告時告訴使用者。
 
-### 派發範本
+### 控制 context
 
-```
-你是 QA 流程中「<stage 名稱>」階段的執行者。
-1. 讀取並完整遵守 <子 skill 目錄>/SKILL.md（絕對路徑）。其中的 `qa` 指 node "<qa-workflow 目錄>/bin/qa.mjs"。
-2. 專案根目錄：<絕對路徑>；run：<runId>；模式：<full|incremental|rerun>。
-3. <這一輪的額外資訊：使用者的補充、上一次 gate 的錯誤原文、評審意見、分配給你的 feature…>
-4. 不要執行 qa gate、qa confirm；不要修改 .qa/runs/<runId>/state.json。
-5. 完成後只回傳以下 JSON，不要附其他說明：
-   { "status": "done" | "needs-user" | "blocked",
-     "summary": "<三句以內>",
-     "counts": { … 這個階段的關鍵數字 … },
-     "question": "<status 為 needs-user 時，給使用者的一個問題>",
-     "blockers": ["<status 為 blocked 時的原因>"] }
-```
+所有階段都在同一個對話中，所以要主動節省 context：
 
-- subagent **不能再派 subagent**。所以需要並行或需要獨立判斷的工作，一律由主對話派發，也就是下面三個情況。
-- 環境沒有 Agent 工具時，改用 Skill 工具直接呼叫子 skill。流程相同，只是 context 會累積在主對話中。
+- 階段之間只靠產物檔交接。進入新階段時，從產物檔讀需要的欄位，不依賴前面對話的記憶。
+- 大檔（log、diff、`review-checks.json`）只讀需要的段落，用 `grep`、`sed -n` 或一行指令抽出，不整份讀進來。
+- 逐個 feature、逐個分塊處理，每處理完一個就把結果寫成檔案，再處理下一個。中斷後可以從沒完成的部分接續。
+- 指令輸出很長時，只看摘要或結尾。
 
-### 用例設計：設計與評審分開派
+### 用例設計：設計 → 評審 → 修正
 
-1. 派一個**設計 subagent**（`qa-cases`），在 prompt 中註明「跳過第 7 步的獨立評審，`selfReview` 先填 `{ "score": 0, "rounds": 0 }`」。
-2. 設計完成後，派一個**評審 subagent**。prompt 只給：`qa-cases/references/review-rubric.md`、`qa path design-dir`、context 與 risks 的路徑，並要求它只回傳分數、breakdown 與問題清單。
-3. 分數未達 `caseDesign.minReviewScore`：把評審意見放進 prompt，再派一次設計 subagent 修正；接著重新評審。最多 `caseDesign.maxReviewRounds` 輪。
-4. 最後一次派設計 subagent，把評審結果寫進 `design.json` 的 `selfReview`（`score`、`rounds`、`breakdown`、`notes`），再執行 `qa gate cases`。
+1. 依 `qa-cases` 第 1–6 步完成設計，`selfReview` 先填 `{ "score": 0, "rounds": 0 }`。
+2. 依 `qa-cases` 第 7 步做評審：切換成評審角色，**重新從檔案讀取**產物，依 `qa-cases/references/review-rubric.md` 嚴格評分，列出問題。
+3. 分數未達 `caseDesign.minReviewScore`：逐條修正，再評審一輪。最多 `caseDesign.maxReviewRounds` 輪。
+4. 把評審結果寫進 `design.json` 的 `selfReview`（`score`、`rounds`、`breakdown`、`notes`），再執行 `qa gate cases`。
 
 ### 腳本生成：planner → generator
 
 0. **先確認工具**：執行 `qa doctor`，它會依產品平台（web 或 app）檢查 Playwright MCP／Appium MCP 是否已設定。
    - 缺少時**停下來**，把 doctor 提示的設定方式告訴使用者，並說明設定後要重新啟動 Claude Code，再說「繼續 QA」。
-   - **不要**在缺少工具的情況下派 planner，也不要改用猜的。
-1. **Planner**（每個 feature 派 1 個，同時最多 4 個）：
-   - prompt 註明「你是 planner，依 `qa-scripts/references/planner.md` 執行」，並列出分配到的 feature 與其中的 `@auto` 情境。
-   - planner 會實際操作畫面，寫出證據圖與 `plan/<feature>.json`。
-   - planner 回傳 `needs-user`（例如工具連不上、模擬器沒開、網址無法連線）時，停下來請使用者處理，處理好之後再派一次。
+   - **不要**在缺少工具的情況下做 planner，也不要改用猜的。
+1. **Planner**：依 `qa-scripts/references/planner.md`，**一次處理一個 feature**，實際操作畫面，寫出證據圖與 `plan/<feature>.json`。
+   - 工具連不上、模擬器沒開、網址無法連線時，停下來請使用者處理，處理好之後從這個 feature 接續。
 2. 執行 `qa plan-merge`：合併成 `plan.json`，並列出各判定的數量與無法自動化的情境。**不需要停下來問使用者**：
    - `NOT_FEASIBLE` 的情境會在最終報告中列為「無法自動化，需要人工驗證」，附上原因。
    - 實際畫面和情境不一致的地方，記下來，最終報告時一併說明。
-3. **Generator**：
-   - 只有 1 個 feature → 派 1 個 subagent。
-   - 多個 feature：
-     1. **準備**（1 個 subagent）：建立或確認共用的基礎，例如 BasePage、fixtures 的合併檔、common steps、tags。
-     2. **並行**（每個 feature 派 1 個，同時最多 4 個）：只寫自己領域的 step、Page Object、domain fixtures，結果寫到 `tasks/<feature>.json`，不修改共用檔案，需要時寫進 `sharedRequests`。
-     3. **整合**：執行 `qa tasks-merge`，再派 1 個 subagent 處理 `sharedRequests`、把 domain fixtures 併入合併檔，並執行型別與格式檢查。
-   - prompt 註明「你是 generator，只能使用證據圖中的 selector」。
+3. **Generator**：依 `qa-scripts` 的流程，只使用證據圖中的 selector。
+   - 只有 1 個 feature → 直接寫 `tasks.json`。
+   - 多個 feature：先建立或確認共用的基礎（BasePage、fixtures 合併檔、common steps、tags），再**一次處理一個 feature**，結果寫到 `tasks/<feature>.json`，全部完成後執行 `qa tasks-merge`，最後跑型別與格式檢查。
 4. 執行 `qa gate scripts`。它會檢查：
    - 每個 `@auto` 情境都有計畫與證據檔。
    - 可行的情境都有 task。
@@ -139,20 +120,19 @@ subagent 執行時，使用者畫面上看不到任何過程，很容易以為�
 
 ### 執行與修復：run → healer → 防假綠
 
-1. 派 1 個 subagent（`qa-run`）：執行 `qa run`，並替每個失敗分類。
-2. 有測試缺陷時，依失敗的 feature 分組，每組派 1 個 healer subagent（同時最多 4 個），各自只修分配到的 task，每個測試最多修 `run.maxHealRounds` 輪。
-3. 全部處理完之後，派 1 個 subagent 做防假綠檢查，寫入 `oracleAudit`。
+1. 依 `qa-run` 執行 `qa run`，並替每個失敗分類。
+2. 有測試缺陷時，依失敗的 feature 分組，一次修一組，每個測試最多修 `run.maxHealRounds` 輪。
+3. 全部處理完之後，做防假綠檢查，寫入 `oracleAudit`。
 4. 執行 `qa gate run`。
 
-### 代碼審查：確定性檢查 → 分塊並行 → 合併
+### 代碼審查：確定性檢查 → 逐塊審查 → 合併
 
-1. 執行 `qa review-checks`。只看它印出的摘要，**不要讀 `review-checks.json` 或任何 diff**。
+1. 執行 `qa review-checks`。只看它印出的摘要，不要整份讀 `review-checks.json`。
 2. 執行 `qa review-merge --pending`，列出待審的分塊。中斷後重跑時，只會列出還沒審完的分塊。
-3. 每一塊派一個審查 subagent，同時最多 4 個。prompt 包含：
-   - `qa-code-review/references/review-rubric.md` 的路徑
-   - 該塊的 `diffFile`、`features`（從 `review-checks.json` 的 `scope.chunks` 取得，可以用一行指令抽出）
-   - 確定性檢查的摘要
-   - 要求它把結果寫到 `.qa/runs/<runId>/review/chunk-<id>.json`（格式：`schemas/review-chunk.schema.json`，`checksHash` 用 `qa review-checks` 印出的值），然後只回傳「完成」
+3. 依 `qa-code-review`，**一次審一塊**：
+   - 從 `review-checks.json` 的 `scope.chunks` 用一行指令抽出這一塊的 `diffFile` 與 `features`。
+   - 只讀這一塊的 diff、相關 feature 與 `qa-code-review/references/review-rubric.md`。
+   - 結果寫到 `.qa/runs/<runId>/review/chunk-<id>.json`（格式：`schemas/review-chunk.schema.json`，`checksHash` 用 `qa review-checks` 印出的值），再審下一塊。
 4. 執行 `qa review-merge`：合併所有分塊，計算分數與 verdict，寫入 `review.json`。
 5. 執行 `qa gate review`。
 
@@ -183,7 +163,7 @@ subagent 執行時，使用者畫面上看不到任何過程，很容易以為�
 - 模糊回覆、只回答其中一個問題、或同時提出修改，都不算確認。
 - 使用者要求修改時：
   1. 執行 `qa rewind cases`。
-  2. 派設計 subagent 修改，把使用者的原話放進 prompt；修改後重新評審。
+  2. 依使用者的原話修改設計；修改後重新評審。
   3. 重跑 `qa gate cases`，審閱頁會重新產生。
   4. 再次請使用者確認。
 - 確認後執行 `qa confirm --by "<使用者名稱>" --note "<使用者原話摘要>"`。

@@ -21,7 +21,7 @@ node "<qa-workflow skill 目錄>/bin/qa.mjs" <指令> [參數]
 | `run [--layer unit,api,e2e] [--force]` | 執行測試，把 log 與結果寫入 run 目錄。到達修復上限後需要 `--force` |
 | `review-merge [--pending] [--summary 文字]` | 合併 `review/chunk-*.json` 成 `review.json`（各維度取最低分、去重、重新編號、計算 verdict）。`--pending` 只列出待審的分塊 |
 | `plan-merge` | 合併 planner 的 `plan/<feature>.json` 成 `plan.json`，列出各判定的數量與無法自動化的情境 |
-| `tasks-merge` | 合併並行產生的 `tasks/<feature>.json` 成 `tasks.json`，重新編號並列出共用檔案的修改需求 |
+| `tasks-merge` | 合併逐個 feature 產生的 `tasks/<feature>.json` 成 `tasks.json`，重新編號並列出共用檔案的修改需求 |
 | `review-checks` | 代碼審查的確定性檢查：feature 一致性、coding style 掃描、`config.review.checks` 指令；產出審查範圍與分塊 diff |
 | `report [--force]` | 產生 `report.html`、`summary.md` 並推進到 done。`--force` 可在未完成時產生報告 |
 | `render-review` | 重新產生審閱頁 `cases-review.html` |

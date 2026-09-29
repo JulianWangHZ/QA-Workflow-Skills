@@ -34,7 +34,7 @@ description: >
 |---|---|
 | 沒有取得 JUnit 報告 | 讀 log 判斷每個 task 的結果，寫入 `status`，`evidence` 放 log 路徑 |
 | JUnit 中找不到測試名稱 | 對照 log 修正 `tasks.json` 的 `testName`，或修正測試標題，然後重跑 |
-| layer 未設定指令 | 回報調度者，請使用者補 config |
+| layer 未設定指令 | 停下來，請使用者補 config |
 | 逾時 | 檢查是否卡住。需要時調高 `timeoutSec` 或修正測試 |
 
 ### 3. 為每個失敗分類（`classification` + `reason`）
@@ -44,7 +44,7 @@ description: >
 | `test-defect` | 測試本身寫錯：step definition、選擇器、等待、資料準備、斷言寫法與**已確認的 Then** 不符 | 修正測試後重跑 |
 | `product-defect` | 測試忠實反映已確認的預期，產品行為與預期不同 | 如實記錄，不修改 |
 | `environment` | 服務沒啟動、帳號或憑證、網路、第三方沙箱不可用 | 能排除就排除後重跑；無法排除就改為 `blocked` 並寫明原因 |
-| `unclear-requirement` | 預期本身有歧義，或需求來源互相矛盾 | 回報調度者，由使用者決定 |
+| `unclear-requirement` | 預期本身有歧義，或需求來源互相矛盾 | 停下來，由使用者決定 |
 
 分辨 `test-defect` 與 `product-defect` 的關鍵：**斷言是否和已確認 feature 的 Then 一致。**
 一致卻失敗，就是產品缺陷。**絕對不要把斷言改成符合產品目前的行為。**
@@ -59,7 +59,7 @@ description: >
 - 每次修改都記錄在 `results.json` 的 `repairs`：`attempt`、`taskId`、`change`、`files`。
 - 到上限仍未解決的，維持 `failed` + `test-defect`，報告會標示出來。
 - 沒改任何東西、重跑就通過的，保留 `passed`，並在 `reason` 註明「疑似不穩定」。
-- 調度者可能依失敗群組派多個 healer。每個 healer 只處理分配給它的 task。
+- 依失敗的 feature 分組，一次修一組，修完再處理下一組。
 
 ### 5. 防假綠檢查
 
@@ -74,7 +74,7 @@ description: >
 ### 6. 驗證並回報
 
 1. 執行 `qa validate results`。
-2. 回報調度者，內容包含：
+2. 回報，內容包含：
    - 通過、失敗、阻塞的數量
    - 產品缺陷清單：task、用例、實際與預期
    - 修復紀錄

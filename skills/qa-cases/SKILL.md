@@ -28,7 +28,7 @@ description: >
 | `prototype.html` | 互動原型與情境示範（UI 功能才做） | `references/prototype.md` |
 
 - `cases.json` 與審閱頁 `cases-review.html` 由 CLI 在 `qa gate cases` 時產生，**不要手寫**。
-- 本 skill **不**執行 `qa gate`、`qa confirm`，由調度者負責。
+- 本 skill **不**執行 `qa gate`、`qa confirm`，由 qa-workflow 負責。
 
 ## 流程
 
@@ -122,32 +122,25 @@ description: >
    - 既有測試已覆蓋、且本次沒有變更的行為，不重寫。
    - 同類資料的變體用等價類挑代表值；需要多組資料時，拆成獨立的 Scenario。
 
-### 7. 獨立評審（最多 `caseDesign.maxReviewRounds` 輪，預設 3）
+### 7. 評審（最多 `caseDesign.maxReviewRounds` 輪，預設 3）
 
-**由調度者派評審 subagent 時**（一般情況，因為 subagent 不能再派 subagent）：
-- 你是設計者，跳過這一步。調度者會把評審意見放進下一次的 prompt，你只需要依意見修正。
-- 最後一次被派時，調度者會提供評審結果，由你寫入 `selfReview`。
-
-**自己被直接呼叫、而且有 Agent 工具時**：
-1. 用 Agent 工具開一個**全新上下文**的 subagent 當評審。給它：
-   - design.json、features 目錄、原型、context、risks 的路徑
-   - `references/review-rubric.md`
-   - 要求它只評分並列出問題，不改檔案
-2. 分數未達 `caseDesign.minReviewScore`（預設 85）：
+設計完成後，切換成評審角色：
+1. **重新從檔案讀取** design.json、features 目錄、原型，以及 context、risks，不憑設計時的記憶判斷。
+2. 讀 `references/review-rubric.md`，逐項嚴格評分並列出問題。評審時不改檔案。
+3. 分數未達 `caseDesign.minReviewScore`（預設 85）：
    1. 逐條處理評審提出的問題。
    2. 不採納的問題寫下理由。
-   3. 再送一輪評審。
-3. 把結果寫進 `design.json` 的 `selfReview`：
+   3. 再評審一輪。
+4. 把結果寫進 `design.json` 的 `selfReview`：
    - `score`：最後一輪分數
    - `rounds`
    - `breakdown`：各維度分數
    - `notes`：重要修正與未採納的理由
-4. 環境沒有 Agent 工具時，自己依 rubric 嚴格評分，並在 `notes` 註明「無獨立評審」。
 
 ### 8. 驗證並回報
 
 1. 執行 `qa validate design`，再執行 `qa validate features`，兩者都修到沒有錯誤。
-2. 回報調度者，內容包含：
+2. 回報，內容包含：
    - 情境數，依優先級分佈，以及沒有 `@auto`（人工驗收）的數量
    - 矩陣數、狀態轉換數、原型畫面數
    - 評審分數
@@ -158,7 +151,7 @@ description: >
 
 - 沿用既有的 feature 與 design，已確認情境的編號不變。
 - 新增情境接續最大編號。矩陣、狀態機、原型、技法清單要一併更新，反映新增的範圍。
-- 回報時列出新增與修改的情境，讓調度者在確認點只展示差異。
+- 回報時列出新增與修改的情境，在確認點只展示差異。
 
 ## 禁止
 

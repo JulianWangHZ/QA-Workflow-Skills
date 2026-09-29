@@ -1,4 +1,4 @@
-// 並行 subagent 產出的合併：規則固定、由程式執行，主對話不需要讀取各塊內容。
+// 逐個 feature／分塊產出的合併：規則固定、由程式執行，不需要重讀各塊內容。
 import { REVIEW_DIMENSIONS, expectedReviewVerdict } from './gates.mjs';
 
 const SEVERITY_ORDER = ['critical', 'important', 'minor'];
@@ -33,7 +33,7 @@ export const mergeReviewChunks = ({ chunks, checks, checksHash, summary }) => {
   };
 };
 
-// 依 feature 名稱排序後重新編號，讓並行產出的結果每次合併都一樣
+// 依 feature 名稱排序後重新編號，讓分檔產出的結果每次合併都一樣
 export const mergeTaskParts = ({ parts, designHash }) => {
   const tasks = [...parts].sort((a, b) => a.feature.localeCompare(b.feature))
     .flatMap((p) => p.tasks)

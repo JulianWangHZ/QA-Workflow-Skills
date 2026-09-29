@@ -2,7 +2,7 @@
 name: qa-code-review
 description: >
   qa-workflow 的第 7 階段：代碼審查。先由 CLI 跑確定性檢查（BDD 步驟是否都有實作、coding style 靜態掃描、
-  專案的 type-check／lint，並產出審查範圍與分塊 diff），再派獨立 subagent 依 5 個維度、100 分制評分，
+  專案的 type-check／lint，並產出審查範圍與分塊 diff），再逐塊依 5 個維度、100 分制評分，
   最後得出 APPROVE／APPROVE_WITH_FIXES／BLOCK，寫入 review.json。由 qa-workflow 調度，只審查、不修改。
 ---
 
@@ -11,7 +11,7 @@ description: >
 兩段式：
 
 1. **確定性檢查**：由 CLI 執行，不耗用模型 context。
-2. **獨立評分**：由沒有參與寫測試的 subagent 依評分標準打分。
+2. **逐塊評分**：以審查者的角度，依評分標準逐塊打分。不因為測試是自己寫的就放寬。
 
 結論有一票否決規則，由 CLI 在 `qa gate review` 驗證。你不能自己決定結論。
 
@@ -35,21 +35,19 @@ description: >
 
 **任一檢查 fail，結論就必須是 BLOCK**，不看分數。
 
-### 2. 分塊獨立評分
+### 2. 逐塊評分
 
 `qa review-checks` 已經把審查範圍切成分塊，每一塊有自己的 diff 檔（`review/chunk-<id>.diff`）與相關的 feature 清單。
 
 1. 執行 `qa review-merge --pending`，列出待審的分塊（中斷後只會列出沒審完的）。
-2. 每一塊由一個審查者處理：
-   - **調度者派發時**（一般情況）：每一塊一個 subagent，並行執行。
-   - 環境沒有 Agent 工具時，自己依序審查，每次只讀一塊的 diff。
-3. 審查者只讀：
+2. 一次審一塊，審完寫檔再審下一塊。
+3. 每一塊只讀：
    - 這一塊的 diff 檔
    - 這一塊的 feature
    - `references/review-rubric.md`
    - 確定性檢查的摘要（不含 log）
 4. 需要更多上下文時，才讀相關檔案的特定段落。
-5. 審查者把結果寫到 `review/chunk-<id>.json`（格式：`../qa-workflow/schemas/review-chunk.schema.json`，`checksHash` 用 `qa review-checks` 印出的值），不修改其他檔案，也不重複列出靜態掃描已抓到的問題。
+5. 把結果寫到 `review/chunk-<id>.json`（格式：`../qa-workflow/schemas/review-chunk.schema.json`，`checksHash` 用 `qa review-checks` 印出的值），不修改其他檔案，也不重複列出靜態掃描已抓到的問題。
 
 ### 3. 合併成 review.json
 
@@ -81,7 +79,7 @@ review.json 的欄位：
 ### 4. 驗證並回報
 
 1. 執行 `qa validate review`。
-2. 回報調度者，內容包含：
+2. 回報，內容包含：
    - verdict 與總分
    - 各維度分數
    - critical 與 important 問題（附 file:line）
@@ -89,12 +87,12 @@ review.json 的欄位：
 
 ## 節省 context 的規則
 
-- 主對話只看 `qa review-checks` 印出的摘要，不讀 `review-checks.json`、log 或 diff。
+- 只看 `qa review-checks` 印出的摘要，不整份讀 `review-checks.json` 或 log。
 - 每一塊都有自己的 diff 檔，最多 `config.review.maxChunkLines` 行（預設 800）。超過上限的單一檔案會依 hunk 或行數再切開。
 - diff 只帶前後 3 行（`-U3`）。需要上下文時，才讀該函式附近。
 - 每一塊只附上相關的 feature（從 tasks 反查），不讀全部的 feature。
-- 靜態掃描已經抓到的問題，審查者不需要再找。
-- 審查結果寫成檔案，主對話只收到「完成」。合併由 `qa review-merge` 執行。
+- 靜態掃描已經抓到的問題，不需要再找。
+- 每一塊的結果寫成檔案，合併由 `qa review-merge` 執行。
 - 中斷後重跑 `qa review-merge --pending`，只補審沒完成的分塊。
 
 ## 規則
