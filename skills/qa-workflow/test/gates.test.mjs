@@ -128,6 +128,16 @@ test('cases：維度分數必須等於滿分減扣分，總分必須等於各維
   assert.match(errorsOf(withReview({ score: 95 })), /95.*90/);
 });
 
+test('cases：扣分超過維度上限時，分數以上限計算、最低為 0', () => {
+  const vague = Array.from({ length: 6 }, (_, i) => ({ ref: i % 2 ? 'TC-1' : 'TC-2', points: 2, reason: '含糊的 Then' }));
+  // oracle 最多扣 10：扣 12 仍然是 15 − 10 = 5
+  const oracle = withDimension('oracle', { score: 5, deductions: vague });
+  assert.doesNotMatch(errorsOf(oracle), /oracle/);
+  // riskCoverage 扣 30 超過滿分 20：最低為 0
+  const risks = [{ ref: 'R-1', points: 10, reason: '未覆蓋' }, { ref: 'R-2', points: 10, reason: '未覆蓋' }, { ref: 'R-1', points: 10, reason: '只有正向' }];
+  assert.doesNotMatch(errorsOf(withDimension('riskCoverage', { score: 0, deductions: risks })), /riskCoverage\.score/);
+});
+
 test('cases：沒有核對紀錄就擋下', () => {
   assert.match(errorsOf(withDimension('bdd', { checked: [] })), /bdd/);
 });

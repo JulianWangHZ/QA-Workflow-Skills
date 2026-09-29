@@ -71,7 +71,7 @@
 `qa gate cases` 會檢查：
 1. 7 個維度都有，`max` 與上表一致，沒有多出的維度。
 2. `checked` 至少一筆：寫出這個維度**實際核對了哪些項目**。給滿分也要寫。
-3. `score` = `max` − 所有 `points`；`selfReview.score` = 7 個維度加總。
+3. `score` = `max` − 所有 `points`，但最低為 0；`oracle` 最多扣 10（見上方「常見扣分」）。扣分要照實全部列出，不要為了湊分數少列。`selfReview.score` = 7 個維度加總。
 4. `checked` 與 `ref` 至少引用一個存在的東西：情境（`TC-n`）、風險（`R-n`）、矩陣（`M-n`）、技法名稱、狀態名稱、feature 檔名或 `prototype`。引用不存在的編號會被擋下。
 
 審閱頁會把核對紀錄與扣分逐項顯示給使用者看。

@@ -7,6 +7,15 @@ export const REVIEW_RUBRIC = [
   ['grounding', 10], ['bdd', 15], ['concise', 10]
 ];
 
+// rubric 另訂的單一維度扣分上限；其他維度最多扣到 0
+const DEDUCTION_CAP = { oracle: 10 };
+
+// 扣分照實全部列出，分數由 CLI 套用上限與下限計算，評審不需要為了湊算式少列扣分
+export const expectedDimensionScore = (key, max, deductions) => {
+  const deducted = deductions.reduce((sum, d) => sum + d.points, 0);
+  return Math.max(0, max - Math.min(deducted, DEDUCTION_CAP[key] ?? max));
+};
+
 const ID_PATTERN = /\b(?:TC|R|M)-\d+\b/g;
 
 // 可以被引用的東西：情境、風險、矩陣、技法、狀態、feature 檔、原型
@@ -32,9 +41,10 @@ const checkDimension = (key, max, dim, known) => {
   if (!dim) return [`selfReview.breakdown 缺少維度 ${key}`];
   const errors = [];
   if (dim.max !== max) errors.push(`selfReview.breakdown.${key}.max 應為 ${max}（評分標準），實際為 ${dim.max}`);
-  const deducted = dim.deductions.reduce((sum, d) => sum + d.points, 0);
-  if (dim.score !== max - deducted) {
-    errors.push(`selfReview.breakdown.${key}.score 為 ${dim.score}，但滿分 ${max} 扣掉 ${deducted} 應為 ${max - deducted}`);
+  const expected = expectedDimensionScore(key, max, dim.deductions);
+  if (dim.score !== expected) {
+    const deducted = dim.deductions.reduce((sum, d) => sum + d.points, 0);
+    errors.push(`selfReview.breakdown.${key}.score 為 ${dim.score}，但滿分 ${max} 扣掉 ${deducted}（套用上限與下限後）應為 ${expected}`);
   }
   dim.checked.forEach((c, i) => errors.push(...checkRef(c, known, `${key}.checked[${i}]`)));
   dim.deductions.forEach((d, i) => errors.push(...checkRef(d.ref, known, `${key}.deductions[${i}].ref`)));
