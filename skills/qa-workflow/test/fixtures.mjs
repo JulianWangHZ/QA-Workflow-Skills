@@ -62,10 +62,14 @@ export const selfReview = () => ({
     oracle: { score: 13, max: 15, checked: ['TC-1 Then 回傳 "401"', 'TC-2 Then 顯示文案'], deductions: [{ ref: 'TC-2', points: 2, reason: '沒寫錯誤訊息出現的位置' }] },
     grounding: { score: 10, max: 10, checked: ['TC-1 對應 login.feature 需求'], deductions: [] },
     bdd: { score: 13, max: 15, checked: ['login.feature 關鍵字與 tag'], deductions: [{ ref: 'TC-2', points: 2, reason: '步驟偏命令式' }] },
-    concise: { score: 8, max: 10, checked: ['TC-1、TC-2 沒有重複'], deductions: [{ ref: 'prototype', points: 2, reason: '純 API 但錯誤文案可做畫面示範' }] }
+    concise: { score: 8, max: 10, checked: ['TC-1、TC-2 沒有重複'], deductions: [{ ref: 'prototype', points: 2, reason: '錯誤畫面沒有標出欄位位置' }] }
   },
   notes: []
 });
+
+// 最小可通過 gate 的原型：一個畫面，每個情境都有示範
+export const PROTOTYPE = `<section class="screen" data-id="login" data-name="登入" data-cases="TC-1,TC-2"></section>
+<script type="application/json" id="qa-scenarios">[{"id":"TC-1","start":"login","steps":[{"kind":"when","text":"以錯誤密碼登入","actions":[]}]},{"id":"TC-2","start":"login","steps":[{"kind":"then","text":"顯示錯誤文案","actions":[]}]}]</script>`;
 
 export const design = () => ({
   version: 1,
@@ -76,7 +80,7 @@ export const design = () => ({
   }],
   stateMachine: { states: [], transitions: [] },
   coverage: { techniques: techniqueChecklist() },
-  prototype: { skipReason: '純 API，沒有畫面' },
+  prototype: { file: 'prototype.html', platform: 'web' },
   selfReview: selfReview()
 });
 
@@ -98,7 +102,8 @@ export const loaded = (overrides = {}) => ({
   cases: cases(),
   errors: [],
   files: [{ file: 'login.feature' }],
-  prototypeExists: false,
+  prototypeHtml: PROTOTYPE,
+  prototypeExists: true,
   designHash: 'a'.repeat(64),
   ...overrides
 });
