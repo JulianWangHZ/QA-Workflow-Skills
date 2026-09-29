@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.0](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.3.1...v0.4.0) (2026-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* selfReview.breakdown uses fixed keys (riskCoverage, techniques, stateMachine, oracle, grounding, bdd, concise), each an object with score, max, checked and deductions. Runs still in the cases stage must be re-reviewed.
+
+### Features
+
+* run stages inline and require evidence for case-review scores ([#6](https://github.com/JulianWangHZ/QA-Workflow-Skills/issues/6)) ([c2bb7f7](https://github.com/JulianWangHZ/QA-Workflow-Skills/commit/c2bb7f7862414a2320f14f1a7c790a28640d9d52))
+
 ## [0.3.1](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.3.0...v0.3.1) (2026-09-28)
 
 
