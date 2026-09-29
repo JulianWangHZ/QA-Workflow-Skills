@@ -53,7 +53,7 @@ export const scanFiles = (root, files) => files.flatMap((file) => {
     .map((r) => ({ rule: r.rule, level: r.level, file, line: i + 1, text: `${r.text}：${text.trim().slice(0, 120)}` })));
 });
 
-// 產生審查用 diff：已追蹤的檔案只取變更片段（-U3），新檔案取全文；依行數切成分塊，交給不同的審查 subagent
+// 產生審查用 diff：已追蹤的檔案只取變更片段（-U3），新檔案取全文；依行數切成分塊，逐塊審查
 export const buildDiff = (root, files) => {
   const tracked = new Set(git(root, ['ls-files', '--', ...files]).split('\n').filter(Boolean));
   const parts = files.map((file) => {
@@ -90,7 +90,7 @@ export const splitLargePart = (part, maxLines = DEFAULT_CHUNK_LINES) => {
   });
 };
 
-// 依行數上限把 diff 片段裝箱成分塊；每塊之後會寫成獨立的 diff 檔，交給一個審查 subagent
+// 依行數上限把 diff 片段裝箱成分塊；每塊之後會寫成獨立的 diff 檔，逐塊審查
 export const chunkParts = (parts, maxLines = DEFAULT_CHUNK_LINES) => parts
   .flatMap((part) => splitLargePart(part, maxLines))
   .reduce((chunks, part) => {

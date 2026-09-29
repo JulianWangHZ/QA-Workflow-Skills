@@ -51,6 +51,22 @@ export const scenarioIndex = () => [
   { id: 'TC-2', file: 'login.feature', title: '錯誤訊息文案', priority: 'P2', riskIds: ['R-2'], type: 'ui' }
 ];
 
+// 7 個評審維度都附上核對紀錄；扣分合計 10，總分 90
+export const selfReview = () => ({
+  score: 90,
+  rounds: 1,
+  breakdown: {
+    riskCoverage: { score: 16, max: 20, checked: ['R-1 → TC-1', 'R-2 → TC-2'], deductions: [{ ref: 'R-2', points: 4, reason: '只有 UI 情境 TC-2' }] },
+    techniques: { score: 20, max: 20, checked: ['M-1 每列都有情境', 'boundary N/A 理由成立'], deductions: [] },
+    stateMachine: { score: 10, max: 10, checked: ['沒有狀態流轉，state-transition 標 N/A'], deductions: [] },
+    oracle: { score: 13, max: 15, checked: ['TC-1 Then 回傳 "401"', 'TC-2 Then 顯示文案'], deductions: [{ ref: 'TC-2', points: 2, reason: '沒寫錯誤訊息出現的位置' }] },
+    grounding: { score: 10, max: 10, checked: ['TC-1 對應 login.feature 需求'], deductions: [] },
+    bdd: { score: 13, max: 15, checked: ['login.feature 關鍵字與 tag'], deductions: [{ ref: 'TC-2', points: 2, reason: '步驟偏命令式' }] },
+    concise: { score: 8, max: 10, checked: ['TC-1、TC-2 沒有重複'], deductions: [{ ref: 'prototype', points: 2, reason: '純 API 但錯誤文案可做畫面示範' }] }
+  },
+  notes: []
+});
+
 export const design = () => ({
   version: 1,
   scenarios: scenarioIndex(),
@@ -61,7 +77,7 @@ export const design = () => ({
   stateMachine: { states: [], transitions: [] },
   coverage: { techniques: techniqueChecklist() },
   prototype: { skipReason: '純 API，沒有畫面' },
-  selfReview: { score: 90, rounds: 1 }
+  selfReview: selfReview()
 });
 
 const baseCase = {

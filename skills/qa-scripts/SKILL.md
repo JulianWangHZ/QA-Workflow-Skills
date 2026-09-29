@@ -23,13 +23,13 @@ description: >
 | **Planner** | 實際操作畫面（Playwright MCP／Appium MCP，**缺少就停下來請使用者設定，不用猜的**），記錄 locator 與 oracle，判定可行性：`AUTOMATABLE`、`NEEDS_API_SETUP`、`NOT_FEASIBLE` | `evidence/<feature>.md`、`plan/<feature>.json` → `qa plan-merge` → `plan.json` | `references/planner.md` |
 | **Generator** | 依證據圖寫 step、Page Object、fixture。**每個 selector 都要能在證據圖中找到**；`NOT_FEASIBLE` 的情境不寫 | 測試檔、`tasks.json`（或 `tasks/<feature>.json`） | 本文件下方與 `references/coding-style.md` |
 
-調度者會先派 planner（每個 feature 一個，並行），執行 `qa plan-merge`，再派 generator。prompt 中會註明你是哪個角色。
-**如果你是 planner，只看 `references/planner.md`，不要寫測試程式碼。** 以下內容是給 generator 的。
+先逐個 feature 做 planner，執行 `qa plan-merge`，再逐個 feature 做 generator。
+**做 planner 時只看 `references/planner.md`，不要寫測試程式碼。** 以下內容是給 generator 的。
 
 ## Generator 的額外規則
 
 - 讀 `qa path plan` 與對應的證據圖。只處理判定為 `AUTOMATABLE` 或 `NEEDS_API_SETUP` 的情境。
-- **selector 只能用證據圖中驗證過的。** 證據圖沒有記錄的元素，不要自己猜。需要的話，回報調度者補做 planner。
+- **selector 只能用證據圖中驗證過的。** 證據圖沒有記錄的元素，不要自己猜。需要的話，回到 planner 補做這個情境。
 - `NEEDS_API_SETUP` 的前置資料，依 `apiSetup` 在 Given 中透過 API client 或 factory 建立。
   - API 標為 `available: false` 時，先寫好呼叫的介面，並標上 `TODO` 與來源；該 task 的預期結果可能是 blocked。
 - Then 的斷言要驗證證據圖記錄的 oracle，不能換成比較寬鬆的版本。
@@ -38,7 +38,7 @@ description: >
 ## 前置檢查
 
 `qa status` 的 stage 必須是 `scripts`，而且 `confirmation.json` 存在。
-不符合就停下並回報調度者，**不要產生任何測試檔**。
+不符合就停下並回報，**不要產生任何測試檔**。
 
 ## 流程
 
@@ -64,13 +64,12 @@ description: >
    - Base Page／Screen、fixtures 合併檔、一個 domain 的 fixtures、tags、hooks
    - 只建立這次需要的部分，並在回報中說明
 
-### 並行模式（調度者依 feature 分派時）
+### 多個 feature 時逐個處理
 
-調度者可能只分配一個 feature 給你，prompt 中會註明。這時：
-- 只處理分配給你的 feature 中標了 `@auto` 的情境。
-- 只寫這個領域的檔案：`{domain}.steps.ts`、這個領域的 Page Object、`{domain}.fixtures.ts`。
-- **不修改共用檔案**，例如 BasePage、`test.fixtures.ts`、`common.steps.ts`、`tags.ts`、設定檔。需要修改時，寫進 `sharedRequests`，由整合步驟處理。
-- 結果寫到 `.qa/runs/<runId>/tasks/<feature 檔名>.json`，格式見 `../qa-workflow/schemas/tasks-part.schema.json`。不要寫 `tasks.json`，也不需要填 task id 與 designHash，這些由 `qa tasks-merge` 產生。
+1. 先建立或確認共用的基礎，例如 BasePage、`test.fixtures.ts`、`common.steps.ts`、`tags.ts`。
+2. 一次處理一個 feature 中標了 `@auto` 的情境，寫這個領域的檔案：`{domain}.steps.ts`、這個領域的 Page Object、`{domain}.fixtures.ts`。需要修改共用檔案時直接改。
+3. 每個 feature 的結果寫到 `.qa/runs/<runId>/tasks/<feature 檔名>.json`，格式見 `../qa-workflow/schemas/tasks-part.schema.json`。不需要填 task id 與 designHash，這些由 `qa tasks-merge` 產生。中斷後可以從沒有分檔的 feature 接續。
+4. 全部完成後執行 `qa tasks-merge`。
 
 ### 2. 選擇實作方式
 
@@ -80,7 +79,7 @@ description: >
 | 沒有 `bdd` | 依 layer 寫成一般測試。測試標題使用 Scenario 標題，測試內用註解標出對應的 Given/When/Then。不需要引入 BDD 框架。 |
 
 BDD 專案的 `qa gate scripts` 會以 Scenario 標題比對專案中的 feature 與確認內容。tag 或步驟有任何差異都會被擋下。
-發現情境本身有問題時，不要在專案中直接修改 feature，要回報調度者。
+發現情境本身有問題時，不要在專案中直接修改 feature，要回報使用者。
 
 ### 3. 每個標了 `@auto` 的情境至少一個 task
 
@@ -113,7 +112,7 @@ BDD 專案的 `qa gate scripts` 會以 Scenario 標題比對專案中的 feature
 - 需要產品程式碼提供測試入口（例如 test id、測試用 API）時：
   1. **不要修改產品程式碼**。
   2. 把該用例的 task 照樣建立。
-  3. 在回報中列出需要的變更，由調度者告知使用者。
+  3. 在回報中列出需要的變更，告知使用者。
 
 ### 5. 產出 tasks.json
 
@@ -130,12 +129,12 @@ BDD 專案的 `qa gate scripts` 會以 Scenario 標題比對專案中的 feature
 
 ### 7. 回報
 
-回報調度者，內容包含：
+回報，內容包含：
 - 新增與修改的檔案
 - task 數量
 - 無法自動化或需要產品配合的用例
 
 ## 禁止
 
-- 修改 `design/` 下的任何檔案，或在專案中改寫已確認的 feature。發現情境本身有問題時，回報調度者，由使用者決定是否重新確認。
+- 修改 `design/` 下的任何檔案，或在專案中改寫已確認的 feature。發現情境本身有問題時，回報使用者，由使用者決定是否重新確認。
 - 修改 `config.repair.allowedPaths` 以外的檔案。

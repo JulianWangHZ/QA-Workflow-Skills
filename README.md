@@ -107,7 +107,7 @@ flowchart LR
 | **State machine** | Maps every state and transition, including the ones the system must *refuse*. Each transition gets a scenario, and so does each refused one. |
 | **Prototype** | Builds a clickable mock-up that plays each scenario step by step: an iPhone frame for apps, or desktop and mobile views for web. |
 | **BDD scenarios** | Writes the Gherkin: declarative, one behavior per scenario, tagged `@regression`, `@smoke`, `@auto` or `@boundary`. |
-| **Independent review** | A separate reviewer scores the design out of 100. Anything under 85 goes back for another round. |
+| **Independent review** | A dedicated review pass re-reads the design from disk and scores it out of 100. Anything under 85 goes back for another round. |
 
 Along the way, twelve test-design techniques are checked one by one:
 - equivalence classes

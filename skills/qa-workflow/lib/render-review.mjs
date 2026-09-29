@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { TYPES } from './gherkin.mjs';
 import { countPrototypeScreens, readPrototypeScenarios } from './design.mjs';
+import { REVIEW_RUBRIC } from './self-review.mjs';
 
 const asset = (name) => readFileSync(fileURLToPath(new URL(`../assets/${name}`, import.meta.url)), 'utf8');
 const PAGES = ['overview', 'matrix', 'state', 'prototype', 'acceptance', 'bdd'];
@@ -129,24 +130,22 @@ const techniqueGrid = ({ design, dict, r }) => `<div class="techniques">${design
     : `<div class="na"><h3>${name}</h3><span class="en">${escapeHtml(t.technique)} · ${escapeHtml(r.na)}</span><p>${escapeHtml(t.reason)}</p></div>`;
 }).join('')}</div>`;
 
-// 評分標準（review-rubric.md）各維度滿分；breakdown 可以直接寫 { score, max } 覆蓋
-const RUBRIC_MAX = { 風險覆蓋: 20, 技法與矩陣: 20, 狀態機: 10, 預期可判定: 15, 依據真實: 10, BDD: 15, 精簡與原型: 10 };
-const compact = (s) => String(s).replace(/\s+/g, '');
-
-// 評審寫出的名稱常有空白或字尾差異（「BDD品質」「技法與矩陣完整」），忽略空白後用前綴比對
-export const rubricMax = (name) => {
-  const key = Object.keys(RUBRIC_MAX).find((k) => compact(name).startsWith(k));
-  return key ? RUBRIC_MAX[key] : 100;
+// 每個維度一列：分數條，展開後看核對紀錄與扣分
+const dimensionRow = (key, max, dim, r) => {
+  const score = dim?.score ?? 0;
+  const pct = Math.max(0, Math.min(100, (score / max) * 100));
+  const checked = (dim?.checked ?? []).map((c) => `<li>${escapeHtml(c)}</li>`).join('');
+  const deductions = (dim?.deductions ?? [])
+    .map((d) => `<li><span class="minus">−${escapeHtml(d.points)}</span> <b>${escapeHtml(d.ref)}</b> ${escapeHtml(d.reason)}</li>`).join('');
+  return `<li><details><summary><span>${escapeHtml(r.dimension[key])}</span><span class="bar"><i style="width:${pct}%"></i></span><span class="v">${escapeHtml(score)}/${escapeHtml(max)}</span></summary>
+    <div class="evidence"><h4>${escapeHtml(r.checked)}</h4><ul>${checked}</ul>${deductions ? `<h4>${escapeHtml(r.deductions)}</h4><ul>${deductions}</ul>` : ''}</div></details></li>`;
 };
 
 const scorecard = ({ design, minReviewScore, r }) => {
   const { selfReview } = design;
-  const bars = Object.entries(selfReview.breakdown ?? {}).map(([name, value]) => {
-    const score = typeof value === 'number' ? value : Number(value?.score ?? 0);
-    const max = typeof value === 'object' && value?.max ? Number(value.max) : rubricMax(name);
-    const pct = Math.max(0, Math.min(100, (score / max) * 100));
-    return `<li><span>${escapeHtml(name)}</span><span class="bar"><i style="width:${pct}%"></i></span><span class="v">${escapeHtml(score)}/${escapeHtml(max)}</span></li>`;
-  });
+  const bars = selfReview.breakdown
+    ? REVIEW_RUBRIC.map(([key, max]) => dimensionRow(key, max, selfReview.breakdown[key], r))
+    : [];
   const passed = selfReview.score >= minReviewScore;
   return `<div class="score">
     <div class="total"><b>${escapeHtml(selfReview.score)}</b><small>/100</small>

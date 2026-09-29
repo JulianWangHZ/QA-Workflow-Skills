@@ -22,7 +22,7 @@
 | `run.oracleAudit` | 通過的測試是否要做防假綠（突變）檢查 | `true` |
 | `run.maxHealRounds` | healer 對每個失敗測試最多修幾輪 | 2 |
 | `review.checks` | 代碼審查時要執行的確定性檢查指令，例如 `npx bddgen`、`npm run check`。任何一個失敗，審查結論就是 BLOCK | 依偵測結果 |
-| `review.maxChunkLines` | 審查 diff 每一塊的行數上限。超過就分成多塊，由多個 subagent 並行審查 | 800 |
+| `review.maxChunkLines` | 審查 diff 每一塊的行數上限。超過就分成多塊，逐塊審查 | 800 |
 | `integrations.issueTracker` / `design` / `database` | 可用的 MCP 名稱，留空代表不使用。只是提示，各 skill 仍會檢查工具是否真的存在 | 空 |
 | `report.dir` | 報告副本輸出目錄 | `.qa/reports` |
 

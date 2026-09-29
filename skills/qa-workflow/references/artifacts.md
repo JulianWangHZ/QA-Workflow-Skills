@@ -20,7 +20,7 @@
     ├── confirmation.json    # ★ 確認紀錄與設計 hash（只由 CLI 產生）
     ├── plan/                # 5 planner 的計畫分檔（qa plan-merge 合併）
     ├── plan.json            # 5 每個 @auto 情境的可行性、證據、前置資料、oracle
-    ├── tasks/               # 5 並行產生時，各 feature 的 task 分檔（qa tasks-merge 合併）
+    ├── tasks/               # 5 多個 feature 時，各 feature 的 task 分檔（qa tasks-merge 合併）
     ├── tasks.json           # 5 情境 ↔ 測試對照
     ├── results.json         # 4 執行結果、失敗分類、修復紀錄
     ├── logs/attempt-N-<layer>.log
@@ -56,7 +56,7 @@
 | `coverage.techniques[]` | 12 種技法逐項判定：適用時填 `caseIds`，N/A 時填 `reason` |
 | `coverage.deferredRisks[]` | 延後處理的 P0/P1 風險與理由 |
 | `prototype` | `file`、`platform`（`app` 或 `web`），或 `skipReason`。畫面與情境示範寫在原型 HTML 中 |
-| `selfReview` | 獨立評審的 `score`、`rounds`、`breakdown`、`notes` |
+| `selfReview` | 評審的 `score`、`rounds`、`breakdown`（7 個維度，各含 `score`、`max`、`checked`、`deductions`，gate 會核對算式與引用）、`notes` |
 | `openQuestions[]` | 待釐清問題 |
 
 ## design/features/*.feature

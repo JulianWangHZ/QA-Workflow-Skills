@@ -1,5 +1,5 @@
 {
-  "title": "review/chunk-N.json — 單一分塊的審查結果（由審查 subagent 寫入）",
+  "title": "review/chunk-N.json — 單一分塊的審查結果（逐塊審查時寫入）",
   "type": "object",
   "required": [
     "version",

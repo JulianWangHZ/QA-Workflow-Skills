@@ -31,9 +31,9 @@ const NEXT_ACTION = {
   risk: '以 qa-risk 分析風險，完成後執行 qa gate risk',
   cases: '以 qa-cases 產出測試矩陣、狀態機、原型與 BDD feature，完成後執行 qa gate cases',
   confirm: '請使用者開啟 cases-review.html 審閱；使用者明確同意後才執行 qa confirm --by <名字>',
-  scripts: '以 qa-scripts 依序派 planner（實際操作、判定可行性 → qa plan-merge）與 generator（→ qa tasks-merge），完成後執行 qa gate scripts',
-  run: '執行 qa run，以 qa-run 分類失敗、派 healer 修復並做防假綠檢查，完成後執行 qa gate run',
-  review: '先執行 qa review-checks，再以 qa-code-review 依分塊派獨立 subagent 評分，完成後執行 qa gate review',
+  scripts: '以 qa-scripts 逐個 feature 做 planner（實際操作、判定可行性 → qa plan-merge）與 generator（→ qa tasks-merge），完成後執行 qa gate scripts',
+  run: '執行 qa run，以 qa-run 分類失敗、逐組修復測試缺陷並做防假綠檢查，完成後執行 qa gate run',
+  review: '先執行 qa review-checks，再以 qa-code-review 逐塊評分（qa review-merge），完成後執行 qa gate review',
   report: '執行 qa report 產生最終報告',
   done: '流程已完成'
 };
@@ -440,7 +440,7 @@ export const report = ({ cwd, flags, out }) => {
   return 0;
 };
 
-// 代碼審查的確定性檢查：不耗用模型 context，只輸出精簡結果；完整 log 與 diff 存檔供審查 subagent 分塊讀取
+// 代碼審查的確定性檢查：不耗用模型 context，只輸出精簡結果；完整 log 與 diff 存檔供逐塊審查時讀取
 export const reviewChecks = ({ cwd, out }) => {
   const ctx = loadRun(cwd);
   if (ctx.state.stage !== 'review') throw new QaError(`qa review-checks 只能在 review 階段執行（目前 ${ctx.state.stage}）`);
@@ -472,7 +472,7 @@ export const reviewChecks = ({ cwd, out }) => {
   const diffFile = join(checkDir, 'review.diff');
   writeText(diffFile, parts.map((p) => p.text).join('\n'));
   const lineCount = new Map(parts.map((p) => [p.file, p.lines]));
-  // 每塊寫成獨立的 diff 檔，並附上相關的 feature（從 tasks 反查），審查 subagent 只需要讀這些
+  // 每塊寫成獨立的 diff 檔，並附上相關的 feature（從 tasks 反查），審查時只需要讀這些
   const featuresOf = (files) => [...new Set((tasks?.tasks ?? [])
     .filter((t) => files.includes(t.file))
     .map((t) => design.cases.find((c) => c.id === t.caseId)?.file)
@@ -542,7 +542,7 @@ export const reviewMerge = ({ cwd, flags, out }) => {
   return 0;
 };
 
-// 合併 planner 並行產生的 plan/<feature>.json；列出可行性統計與不可行的情境
+// 合併 planner 逐個 feature 產生的 plan/<feature>.json；列出可行性統計與不可行的情境
 export const planMerge = ({ cwd, out }) => {
   const ctx = loadRun(cwd);
   const confirmation = artifact(ctx, 'confirmation');

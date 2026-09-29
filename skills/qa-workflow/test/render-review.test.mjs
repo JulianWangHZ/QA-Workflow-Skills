@@ -1,15 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { rubricMax } from '../lib/render-review.mjs';
+import { renderCasesReview } from '../lib/render-review.mjs';
+import { dictionary } from '../lib/i18n.mjs';
+import * as fx from './fixtures.mjs';
 
-test('評審維度名稱有空白或字尾差異時，仍對到正確的滿分', () => {
-  assert.equal(rubricMax('技法與矩陣'), 20);
-  assert.equal(rubricMax('技法與矩陣完整'), 20);
-  assert.equal(rubricMax('BDD 品質'), 15);
-  assert.equal(rubricMax('BDD品質'), 15);
-  assert.equal(rubricMax(' 精簡與原型 '), 10);
+const render = () => renderCasesReview({
+  runId: 'r1', context: fx.context(), risks: fx.risks(), loaded: { ...fx.loaded(), designHash: 'a'.repeat(64) },
+  confirmationStatus: 'pending', dict: dictionary('zh-TW'), language: 'zh-TW'
 });
 
-test('不認得的維度名稱退回 100', () => {
-  assert.equal(rubricMax('其他'), 100);
+test('評審分數顯示每個維度的滿分、核對紀錄與扣分', () => {
+  const html = render();
+  assert.match(html, /16\/20/);
+  assert.match(html, /8\/10/);
+  assert.match(html, /R-1 → TC-1/);
+  assert.match(html, /−4/);
+  assert.match(html, /只有 UI 情境 TC-2/);
 });
