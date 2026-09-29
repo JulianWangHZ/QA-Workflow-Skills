@@ -96,7 +96,7 @@ node "<本 skill 目錄>/bin/qa.mjs"
 ### 用例設計：設計 → 評審 → 修正
 
 1. 依 `qa-cases` 第 1–6 步完成設計，`selfReview` 先填 `{ "score": 0, "rounds": 0 }`。
-2. 依 `qa-cases` 第 7 步做評審：切換成評審角色，**重新從檔案讀取**產物，依 `qa-cases/references/review-rubric.md` 嚴格評分，列出問題。
+2. 依 `qa-cases` 第 7 步做評審：切換成評審角色，**重新從檔案讀取**產物，依 `qa-cases/references/review-rubric.md` 嚴格評分。每個維度都要寫核對紀錄與扣分依據，`qa gate cases` 會核對算式與引用的編號。
 3. 分數未達 `caseDesign.minReviewScore`：逐條修正，再評審一輪。最多 `caseDesign.maxReviewRounds` 輪。
 4. 把評審結果寫進 `design.json` 的 `selfReview`（`score`、`rounds`、`breakdown`、`notes`），再執行 `qa gate cases`。
 

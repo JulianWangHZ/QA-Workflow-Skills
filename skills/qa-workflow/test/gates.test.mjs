@@ -86,17 +86,69 @@ test('cases：原型要有 file 或 skipReason，file 必須存在，情境示�
   assert.match(checkCases(load('[{"id":"TC-1","steps":[{}]},{"id":"TC-2","noUi":true}]'), fx.risks()).errors.join(), /reason/);
 });
 
+// 把 riskCoverage 再扣 20 分，總分變成 70
+const lowScore = (rounds) => {
+  const review = fx.selfReview();
+  const riskCoverage = { ...review.breakdown.riskCoverage, score: 0, deductions: [...review.breakdown.riskCoverage.deductions, { ref: 'R-1', points: 16, reason: '只驗了一個密碼' }] };
+  return { ...review, score: 74, rounds, breakdown: { ...review.breakdown, riskCoverage } };
+};
+const withReview = (patch) => withDesign({ selfReview: { ...fx.selfReview(), ...patch } });
+const withDimension = (key, patch) => {
+  const review = fx.selfReview();
+  return withDesign({ selfReview: { ...review, breakdown: { ...review.breakdown, [key]: { ...review.breakdown[key], ...patch } } } });
+};
+
+test('cases：評分有核對紀錄與扣分依據時通過', () => {
+  assert.deepEqual(checkCases(fx.loaded(), fx.risks(), fx.config()).errors, []);
+});
+
 test('cases：自審分數未達門檻會擋下，輪數用完只警告', () => {
   const cfg = fx.config();
-  assert.match(errorsOf(withDesign({ selfReview: { score: 70, rounds: 1 } }), cfg), /70/);
-  const r = checkCases(withDesign({ selfReview: { score: 70, rounds: 3 } }), fx.risks(), cfg);
+  assert.match(errorsOf(withDesign({ selfReview: lowScore(1) }), cfg), /74/);
+  const r = checkCases(withDesign({ selfReview: lowScore(3) }), fx.risks(), cfg);
   assert.deepEqual(r.errors, []);
-  assert.ok(r.warnings.some((w) => w.includes('70')));
+  assert.ok(r.warnings.some((w) => w.includes('74')));
 });
+
+test('cases：還沒評審（rounds 0）或缺少 breakdown 會擋下', () => {
+  const { breakdown, ...unreviewed } = fx.selfReview();
+  assert.match(errorsOf(withDesign({ selfReview: { ...unreviewed, score: 0, rounds: 0 } })), /尚未評審/);
+  assert.match(errorsOf(withDesign({ selfReview: unreviewed })), /breakdown/);
+});
+
+test('cases：每個維度都要有，滿分要和評分標準一致', () => {
+  const { concise, ...rest } = fx.selfReview().breakdown;
+  assert.match(errorsOf(withReview({ breakdown: rest })), /concise/);
+  assert.match(errorsOf(withReview({ breakdown: { ...fx.selfReview().breakdown, extra: concise } })), /extra/);
+  assert.match(errorsOf(withDimension('stateMachine', { max: 20, score: 20 })), /stateMachine.*10/);
+});
+
+test('cases：維度分數必須等於滿分減扣分，總分必須等於各維度加總', () => {
+  assert.match(errorsOf(withDimension('oracle', { score: 15 })), /oracle.*15.*13/);
+  assert.match(errorsOf(withReview({ score: 95 })), /95.*90/);
+});
+
+test('cases：沒有核對紀錄就擋下', () => {
+  assert.match(errorsOf(withDimension('bdd', { checked: [] })), /bdd/);
+});
+
+test('cases：核對與扣分只能引用存在的情境、風險、矩陣', () => {
+  assert.match(errorsOf(withDimension('riskCoverage', { checked: ['R-9 → TC-1'] })), /R-9/);
+  assert.match(errorsOf(withDimension('oracle', { deductions: [{ ref: 'TC-99', points: 2, reason: 'x' }] })), /TC-99/);
+  assert.match(errorsOf(withDimension('grounding', { checked: ['看起來都合理'] })), /grounding.*看起來都合理/);
+});
+
+// TC-1 與 M-1 被移除後，評審紀錄只能引用還存在的東西
+const onlyTc2Review = () => {
+  const review = fx.selfReview();
+  const retarget = (text) => text.replaceAll('TC-1', 'TC-2').replaceAll('M-1', 'R-2');
+  const breakdown = Object.fromEntries(Object.entries(review.breakdown).map(([key, dim]) => [key, { ...dim, checked: dim.checked.map(retarget) }]));
+  return { ...review, breakdown };
+};
 
 test('cases：P0/P1 風險延後處理需寫理由，並產生警告', () => {
   const [, c2] = fx.cases();
-  const design = { ...fx.design(), matrices: [], coverage: { techniques: fx.design().coverage.techniques.map((t) => (t.applicable ? { ...t, caseIds: ['TC-2'] } : t)), deferredRisks: [{ riskId: 'R-1', reason: '需求未定' }] } };
+  const design = { ...fx.design(), matrices: [], coverage: { techniques: fx.design().coverage.techniques.map((t) => (t.applicable ? { ...t, caseIds: ['TC-2'] } : t)), deferredRisks: [{ riskId: 'R-1', reason: '需求未定' }] }, selfReview: onlyTc2Review() };
   const r = checkCases(fx.loaded({ design, cases: [c2] }), fx.risks());
   assert.deepEqual(r.errors, []);
   assert.ok(r.warnings.some((w) => w.includes('R-1')));

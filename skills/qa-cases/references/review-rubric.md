@@ -41,12 +41,39 @@
   - 每組重複情境 −2。
   - UI 功能沒有原型，或原型缺少錯誤、空、權限等關鍵狀態：−5。
 
-## 輸出格式
+## 輸出格式：每個維度都要附證據
 
+寫進 `design.json` 的 `selfReview.breakdown`，7 個維度的 key 固定：
+
+| key | 維度 | 滿分 |
+|---|---|---|
+| `riskCoverage` | 風險覆蓋 | 20 |
+| `techniques` | 技法與矩陣完整 | 20 |
+| `stateMachine` | 狀態機 | 10 |
+| `oracle` | 預期可判定 | 15 |
+| `grounding` | 依據真實 | 10 |
+| `bdd` | BDD 品質 | 15 |
+| `concise` | 精簡與原型 | 10 |
+
+每個維度的格式：
+
+```json
+"riskCoverage": {
+  "score": 16,
+  "max": 20,
+  "checked": ["R-1 → TC-3, TC-7", "R-2 → TC-5", "R-4 → deferred"],
+  "deductions": [
+    { "ref": "R-2", "points": 4, "reason": "只有正向情境 TC-5" }
+  ]
+}
 ```
-分數：<總分>/100
-breakdown：風險覆蓋 x/20、技法與矩陣完整 x/20、狀態機 x/10、預期可判定 x/15、依據真實 x/10、BDD 品質 x/15、精簡與原型 x/10
-問題（依嚴重度排序）：
-1. [維度] 情境 ID / 矩陣列 / 技法 — 問題 — 建議修正
-...
-```
+
+`qa gate cases` 會檢查：
+1. 7 個維度都有，`max` 與上表一致，沒有多出的維度。
+2. `checked` 至少一筆：寫出這個維度**實際核對了哪些項目**。給滿分也要寫。
+3. `score` = `max` − 所有 `points`；`selfReview.score` = 7 個維度加總。
+4. `checked` 與 `ref` 至少引用一個存在的東西：情境（`TC-n`）、風險（`R-n`）、矩陣（`M-n`）、技法名稱、狀態名稱、feature 檔名或 `prototype`。引用不存在的編號會被擋下。
+
+審閱頁會把核對紀錄與扣分逐項顯示給使用者看。
+
+問題清單另外寫進 `selfReview.notes`（依嚴重度排序）：`[維度] 情境 ID / 矩陣列 / 技法 — 問題 — 建議修正`。

@@ -343,10 +343,13 @@
         },
         "rounds": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 0
         },
         "breakdown": {
-          "type": "object"
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/reviewDimension"
+          }
         },
         "notes": {
           "type": "array",
@@ -360,6 +363,29 @@
       "type": "array",
       "items": {
         "type": "string"
+      }
+    }
+  },
+  "definitions": {
+    "reviewDimension": {
+      "type": "object",
+      "required": ["score", "max", "checked", "deductions"],
+      "properties": {
+        "score": { "type": "integer", "minimum": 0 },
+        "max": { "type": "integer", "minimum": 1 },
+        "checked": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "deductions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["ref", "points", "reason"],
+            "properties": {
+              "ref": { "type": "string", "minLength": 1 },
+              "points": { "type": "integer", "minimum": 1 },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
       }
     }
   }

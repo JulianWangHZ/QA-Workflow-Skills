@@ -2,6 +2,7 @@
 import { validateArtifact } from './schema.mjs';
 import { canonicalHash } from './io.mjs';
 import { countPrototypeScreens, readPrototypeScenarios } from './design.mjs';
+import { checkSelfReview } from './self-review.mjs';
 
 export const TECHNIQUES = [
   'equivalence', 'boundary', 'decision-table', 'path', 'state-transition', 'role-permission',
@@ -149,15 +150,6 @@ const checkRiskCoverage = (cases, risks, deferred) => {
   return { errors, warnings };
 };
 
-const checkSelfReview = (selfReview, caseDesign) => {
-  const { minReviewScore, maxReviewRounds } = { ...DEFAULT_CASE_DESIGN, ...caseDesign };
-  if (selfReview.score >= minReviewScore) return { errors: [], warnings: [] };
-  const message = `用例自審分數 ${selfReview.score} 未達 ${minReviewScore}`;
-  return selfReview.rounds >= maxReviewRounds
-    ? { errors: [], warnings: [`${message}（已審 ${selfReview.rounds} 輪，交由人工確認時說明）`] }
-    : { errors: [`${message}，請修正後重審（第 ${selfReview.rounds}/${maxReviewRounds} 輪）`], warnings: [] };
-};
-
 // loaded 來自 design.mjs 的 loadDesign：{ design, cases, errors（feature 解析錯誤）, files, prototypeExists }
 export const checkCases = (loaded, risks, config = {}) =>
   withSchema('design', loaded.design, () => {
@@ -172,7 +164,7 @@ export const checkCases = (loaded, risks, config = {}) =>
       checkStateMachine(design.stateMachine, design.coverage.techniques, caseIds),
       checkPrototype(design.prototype, loaded.prototypeHtml, caseIds),
       checkRiskCoverage(cases, risks ?? { risks: [] }, design.coverage.deferredRisks ?? []),
-      checkSelfReview(design.selfReview, config.caseDesign)
+      checkSelfReview(loaded, risks, { ...DEFAULT_CASE_DESIGN, ...config.caseDesign })
     ];
     return result(parts.flatMap((p) => p.errors), parts.flatMap((p) => p.warnings));
   });

@@ -126,7 +126,7 @@ description: >
 
 設計完成後，切換成評審角色：
 1. **重新從檔案讀取** design.json、features 目錄、原型，以及 context、risks，不憑設計時的記憶判斷。
-2. 讀 `references/review-rubric.md`，逐項嚴格評分並列出問題。評審時不改檔案。
+2. 讀 `references/review-rubric.md`，逐項嚴格評分並列出問題。每個維度都要寫出核對了什麼、每筆扣分的依據（格式見 rubric 的「輸出格式」）。評審時不改檔案。
 3. 分數未達 `caseDesign.minReviewScore`（預設 85）：
    1. 逐條處理評審提出的問題。
    2. 不採納的問題寫下理由。
@@ -134,8 +134,8 @@ description: >
 4. 把結果寫進 `design.json` 的 `selfReview`：
    - `score`：最後一輪分數
    - `rounds`
-   - `breakdown`：各維度分數
-   - `notes`：重要修正與未採納的理由
+   - `breakdown`：7 個維度，各含 `score`、`max`、`checked`、`deductions`
+   - `notes`：問題清單、重要修正與未採納的理由
 
 ### 8. 驗證並回報
 

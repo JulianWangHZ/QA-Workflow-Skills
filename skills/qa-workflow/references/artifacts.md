@@ -56,7 +56,7 @@
 | `coverage.techniques[]` | 12 種技法逐項判定：適用時填 `caseIds`，N/A 時填 `reason` |
 | `coverage.deferredRisks[]` | 延後處理的 P0/P1 風險與理由 |
 | `prototype` | `file`、`platform`（`app` 或 `web`），或 `skipReason`。畫面與情境示範寫在原型 HTML 中 |
-| `selfReview` | 獨立評審的 `score`、`rounds`、`breakdown`、`notes` |
+| `selfReview` | 評審的 `score`、`rounds`、`breakdown`（7 個維度，各含 `score`、`max`、`checked`、`deductions`，gate 會核對算式與引用）、`notes` |
 | `openQuestions[]` | 待釐清問題 |
 
 ## design/features/*.feature
