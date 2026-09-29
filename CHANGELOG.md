@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.5.0](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.4.0...v0.5.0) (2026-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* design.json prototype.skipReason is no longer accepted; prototype.file and platform are required.
+
+### Features
+
+* always require an interactive prototype for case design ([#8](https://github.com/JulianWangHZ/QA-Workflow-Skills/issues/8)) ([721bd63](https://github.com/JulianWangHZ/QA-Workflow-Skills/commit/721bd63a209b318cf284821ae1bd9bf64613e386))
+
 ## [0.4.0](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.3.1...v0.4.0) (2026-09-29)
 
 
