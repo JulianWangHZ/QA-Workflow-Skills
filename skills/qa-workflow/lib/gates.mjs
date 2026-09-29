@@ -103,7 +103,7 @@ const checkStateMachine = (machine, techniques, caseIds) => {
 
 const checkPrototype = (prototype, prototypeHtml, caseIds) => {
   // 原型一律必做（app 與 web 都是），沒有設計稿或程式碼時依需求畫線框；skipReason 不再接受
-  if (!prototype.file) {
+  if (!prototype.file || !prototype.platform) {
     const hint = prototype.skipReason?.trim() ? `（不接受 skipReason「${prototype.skipReason.trim()}」）` : '';
     return { errors: [`原型一律必做，prototype 需要 file 與 platform${hint}`], warnings: [] };
   }

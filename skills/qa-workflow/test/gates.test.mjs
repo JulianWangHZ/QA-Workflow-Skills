@@ -75,6 +75,7 @@ test('cases：狀態轉換每條邊都要有用例，適用時至少要有非法
 test('cases：原型一律必做，skipReason 不能跳過；file 必須存在，情境示範要引用存在的情境', () => {
   assert.match(errorsOf(withDesign({ prototype: {} })), /原型/);
   assert.match(errorsOf(withDesign({ prototype: { skipReason: '純 API，沒有畫面' } })), /一律/);
+  assert.match(errorsOf(withDesign({ prototype: { file: 'prototype.html' } })), /platform/);
   const withFile = { file: 'prototype.html', platform: 'app' };
   const missingFile = fx.loaded({ design: { ...fx.design(), prototype: withFile }, prototypeHtml: null, prototypeExists: false });
   assert.match(checkCases(missingFile, fx.risks()).errors.join(), /原型檔不存在/);
