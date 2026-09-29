@@ -14,7 +14,7 @@
     ├── design.json          # 2 測試矩陣、狀態機、技法、原型畫面、自審
     ├── design/
     │   ├── features/*.feature   # 2 BDD 情境（用例的唯一來源）
-    │   └── prototype.html       # 2 互動原型（UI 功能才有）
+    │   └── prototype.html       # 2 互動原型（一律要有）
     ├── cases.json           # 2 由 feature 解析出的情境清單（CLI 產生）
     ├── cases-review.html    # 2 六分頁審閱頁（CLI 產生）
     ├── confirmation.json    # ★ 確認紀錄與設計 hash（只由 CLI 產生）
@@ -55,7 +55,7 @@
 | `stateMachine` | `entity`、`initial`、`states`、`transitions[]`（`from`、`to`、`trigger`、`valid`、`reason`、`caseIds`） |
 | `coverage.techniques[]` | 12 種技法逐項判定：適用時填 `caseIds`，N/A 時填 `reason` |
 | `coverage.deferredRisks[]` | 延後處理的 P0/P1 風險與理由 |
-| `prototype` | `file`、`platform`（`app` 或 `web`），或 `skipReason`。畫面與情境示範寫在原型 HTML 中 |
+| `prototype` | `file`、`platform`（`app` 或 `web`），一律必填，不接受 `skipReason`。畫面與情境示範寫在原型 HTML 中 |
 | `selfReview` | 評審的 `score`、`rounds`、`breakdown`（7 個維度，各含 `score`、`max`、`checked`、`deductions`，gate 會核對算式與引用）、`notes` |
 | `openQuestions[]` | 待釐清問題 |
 

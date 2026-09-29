@@ -45,6 +45,7 @@ const put = (root, name, data) => writeFileSync(join(runDir(root), `${name}.json
 const putFeature = (root, text = fx.FEATURE) => {
   mkdirSync(join(runDir(root), 'design/features'), { recursive: true });
   writeFileSync(join(runDir(root), 'design/features/login.feature'), text);
+  writeFileSync(join(runDir(root), 'design/prototype.html'), fx.PROTOTYPE);
   // demo 中的 TC-1 對應 test/login.test.mjs 裡同名的測試
 };
 const stage = (root) => JSON.parse(readFileSync(join(runDir(root), 'state.json'), 'utf8')).stage;

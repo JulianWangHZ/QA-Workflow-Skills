@@ -102,10 +102,11 @@ const checkStateMachine = (machine, techniques, caseIds) => {
 };
 
 const checkPrototype = (prototype, prototypeHtml, caseIds) => {
-  if (!prototype.file && !prototype.skipReason?.trim()) {
-    return { errors: ['prototype 需要 file（原型檔）或 skipReason（不做原型的理由）'], warnings: [] };
+  // 原型一律必做（app 與 web 都是），沒有設計稿或程式碼時依需求畫線框；skipReason 不再接受
+  if (!prototype.file) {
+    const hint = prototype.skipReason?.trim() ? `（不接受 skipReason「${prototype.skipReason.trim()}」）` : '';
+    return { errors: [`原型一律必做，prototype 需要 file 與 platform${hint}`], warnings: [] };
   }
-  if (!prototype.file) return { errors: [], warnings: [] };
   if (prototypeHtml == null) return { errors: [`原型檔不存在：design/${prototype.file}`], warnings: [] };
   const errors = [];
   const warnings = [];

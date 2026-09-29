@@ -25,7 +25,7 @@ description: >
 |---|---|---|
 | `../design.json` | 情境索引（編號、優先級、風險、類型）、測試矩陣、狀態機、技法清單、原型設定、自審 | `../qa-workflow/schemas/design.schema.json` |
 | `features/*.feature` | **用例本身**：BDD 情境，是唯一的真實來源 | `references/gherkin.md` |
-| `prototype.html` | 互動原型與情境示範（UI 功能才做） | `references/prototype.md` |
+| `prototype.html` | 互動原型與情境示範（一律要做） | `references/prototype.md` |
 
 - `cases.json` 與審閱頁 `cases-review.html` 由 CLI 在 `qa gate cases` 時產生，**不要手寫**。
 - 本 skill **不**執行 `qa gate`、`qa confirm`，由 qa-workflow 負責。
@@ -75,7 +75,7 @@ description: >
 
 ### 4. 互動原型（`design/prototype.html`）
 
-範圍包含畫面或 UI 流程時，**必須做**。純 API、批次、後端邏輯時可以不做。規格見 `references/prototype.md`：
+**一律要做**，app 與 web 都一樣，使用者不必特別要求；沒有 Codebase 或設計稿時依需求畫線框。純 API、批次、後端邏輯也要做，改成呈現使用者或營運人員看到結果的地方。規格見 `references/prototype.md`：
 1. 複製 `assets/prototype-starter.html` 到 `qa path design-dir` 下的 `prototype.html`。
    - App 產品設為 `data-platform="app"`，只有 iPhone 17 Pro。
    - 網頁產品設為 `data-platform="web"`，有桌面瀏覽器與手機兩種檢視，同一份畫面依寬度自動切換版面。
@@ -84,8 +84,7 @@ description: >
    - 時間、次數、併發這類看不到的規則，用原型內的模擬函式建立狀態。
    - 只有完全沒有畫面的情境，才能標 `noUi` 並寫原因。CLI 會檢查每個情境都有示範。
 4. 在 `design.json` 寫 `prototype`：
-   - 有做：`{ "file": "prototype.html", "platform": "app" | "web" }`
-   - 不做：`{ "skipReason": "<理由>" }`
+   - `{ "file": "prototype.html", "platform": "app" | "web" }`，CLI 不接受 `skipReason`
 
 ### 5. BDD feature（`design/features/*.feature`）
 

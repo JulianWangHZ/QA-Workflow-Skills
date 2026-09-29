@@ -27,7 +27,7 @@
 - ✗ 12 項技法缺漏或重複；適用卻沒有 `caseIds`；N/A 沒寫理由；引用不存在的情境
 - ✗ 矩陣列欄位數與表頭不符；矩陣列既沒有 `caseIds` 也沒有 `skipReason`
 - ✗ 狀態轉換沒有對應情境；`state-transition` 標為適用，但沒有轉換或沒有非法轉換
-- ✗ `prototype` 既沒有 `file` 也沒有 `skipReason`；原型檔不存在；原型沒有畫面
+- ✗ `prototype` 沒有 `file`（原型一律必做，`skipReason` 不能跳過）；原型檔不存在；原型沒有畫面
 - ✗ 情境示範（qa-scenarios）不是合法 JSON；引用不存在的情境；重複；沒有步驟；**有情境沒有示範**；`noUi` 沒有寫 reason
 - ✗ 情境引用不存在的風險；P0/P1 風險沒有情境覆蓋，也不在 `deferredRisks`
 - ✗ 自審分數低於 `minReviewScore`，且輪數還沒用完
