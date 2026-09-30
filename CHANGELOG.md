@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.5.0...v0.6.0) (2026-09-30)
+
+
+### Features
+
+* stack prototype overlays on the source screen with modal and viewer ([#10](https://github.com/JulianWangHZ/QA-Workflow-Skills/issues/10)) ([5fb1055](https://github.com/JulianWangHZ/QA-Workflow-Skills/commit/5fb105553fb1ec7711ff41802dd9f82a10f07498))
+
 ## [0.5.0](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.4.0...v0.5.0) (2026-09-29)
 
 
