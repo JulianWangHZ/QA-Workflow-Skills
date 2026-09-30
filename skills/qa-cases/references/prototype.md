@@ -39,9 +39,15 @@
    |---|---|
    | `data-go="<畫面 id>"` | 切換畫面（有返回堆疊與推入動畫） |
    | `data-back` | 回到上一個畫面 |
-   | `data-open="<id>"` / `data-close` | 打開或關閉 sheet（`class="sheet"`）或 alert（`class="alert"`） |
+   | `data-open="<id>"` | 打開疊加層：sheet（`class="sheet"`）、alert（`class="alert"`）、網頁置中彈窗（`class="modal"`）、全螢幕檢視器（`class="viewer"`） |
+   | `data-close` | 只關閉最上層的疊加層；點背景、按 Esc 也一樣 |
    | `data-toast="文字"` | 顯示 toast |
-   | `go(id)`、`back()`、`toast(text)`、`openOverlay(id)` | 在自訂的 `<script>` 中使用，例如依輸入內容決定進入成功或錯誤畫面 |
+   | `go(id)`、`back()`、`toast(text)`、`openOverlay(id)`、`closeTopOverlay()` | 在自訂的 `<script>` 中使用，例如依輸入內容決定進入成功或錯誤畫面 |
+
+   **彈窗、抽屜、全螢幕檢視器一律做成疊加層**，疊在來源畫面上，不要做成獨立的 `<section class="screen">`：
+   - 打開時來源畫面保持不動，關閉後回到原本的捲動位置與輸入內容。
+   - 可以多層（例如彈窗裡再開確認框），後開的在上面；關閉時只關最上層，下面的層維持開著。
+   - 疊加層的元素放在來源畫面的 `<section>` 內，加 `id`，用 `data-open` 打開。
 
    輸入框可以直接打字，`.switch`、`.segmented` 可以直接切換。
    需要模擬規則（例如失敗次數、表單驗證）時，在檔案最後的 `<script>` 加上幾行邏輯即可。
@@ -49,6 +55,8 @@
    - 共用：`.card`、`.field`（加 `.error`）、`.btn`（`.block`、`.ghost`、`.plain`、`.destructive`、`disabled`）、`.badge`（`.ok`、`.bad`、`.warn`）、`.switch`、`.segmented`、`.empty`、`.sheet`、`.alert`、`.toast`
    - App：`.nav`（`.bar`、`.back`、大標題 `h1`）、`.content`、`.section-label`、`.tabbar`、`.group` + `.cell`（`.link`、`.detail`）
    - Web：`.site` > `.topbar`（`.brand`、`nav`、`.menu-btn`）+ `.page`；`.cols`（用 `style="--cols:3"` 指定欄數）、`.narrow`、`.only-desktop`、`.only-mobile`
+   - 置中彈窗 `.modal`：`<header>`（`h2` + 關閉鈕 `.x`）、內容、`.actions`（按鈕靠右）
+   - 全螢幕檢視器 `.viewer`：`.viewer-bar`（關閉鈕、頁碼）+ `.viewer-body`（圖片或文件預覽，置中）
    - Web 畫面依**裝置寬度**自動切換版面：700px 以下是手機版（`.cols` 變單欄、導覽列收成選單）。需要更細的差異時，用 `@container vp (max-width: 700px) { … }`。
 
 ## 情境示範（qa-scenarios）
