@@ -18,10 +18,11 @@
   互動屬性（加在任何元素上）：
     data-go="home"             切換到指定畫面（有返回堆疊）
     data-back                  回到上一個畫面
-    data-open="sheet-id"       打開 sheet 或 alert（class="sheet" / class="alert"）
-    data-close                 關閉目前的 sheet 或 alert
+    data-open="overlay-id"     打開疊加層：sheet、alert、modal（網頁置中彈窗）、viewer（全螢幕檢視器）
+    data-close                 只關閉最上層的疊加層（點背景、按 Esc 也一樣）
     data-toast="已儲存"         顯示 toast
-  輸入框、switch、segmented 可以直接操作；也可以寫 onclick="go('id')"、toast('文字')。
+  疊加層疊在來源畫面上，不切換畫面；可以多層，後開的在上面。
+  輸入框、switch、segmented 可以直接操作；也可以寫 onclick="go('id')"、toast('文字')、openOverlay('id')、closeTopOverlay()。
   需要在情境示範前重設自訂狀態時，定義 window.onScenarioReset = () => { … }。
 
   情境示範格式（qa-scenarios）：
@@ -261,7 +262,7 @@
 
   /* 情境示範：點擊位置與預期結果的標示 */
   .tap-dot {
-    position: absolute; z-index: 80; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; pointer-events: none;
+    position: absolute; z-index: 95; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; pointer-events: none;
     background: rgba(212, 243, 107, 0.55); border: 2px solid #16191a; animation: tap 0.5s ease-out forwards;
   }
   @keyframes tap { from { transform: scale(0.4); opacity: 1; } to { transform: scale(1.3); opacity: 0; } }
@@ -351,8 +352,31 @@
   .alert .actions { display: flex; border-top: 0.5px solid var(--ios-sep); }
   .alert .actions button { flex: 1; height: 44px; border: 0; background: none; font: inherit; font-size: 17px; color: var(--tint); cursor: pointer; }
   .alert .actions button + button { border-left: 0.5px solid var(--ios-sep); font-weight: 600; }
+  /* 網頁置中彈窗 */
+  .modal {
+    position: absolute; left: 50%; top: 50%; z-index: 61; width: min(480px, calc(100% - 32px)); max-height: 86%; overflow-y: auto;
+    padding: 24px; border-radius: 12px; background: #fff; color: #1d1d1f; box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.35);
+    opacity: 0; transform: translate(-50%, -50%) scale(0.96); pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+  }
+  .modal.on { opacity: 1; transform: translate(-50%, -50%); pointer-events: auto; }
+  .modal header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .modal header h2 { margin: 0; }
+  .modal .x { width: 32px; height: 32px; border: 0; border-radius: 50%; background: var(--ios-fill); font-size: 18px; line-height: 1; color: inherit; cursor: pointer; }
+  .modal .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  .modal .actions .btn { min-height: 40px; font-size: 15px; border-radius: 10px; }
+  /* 全螢幕檢視器（圖片、文件預覽） */
+  .viewer {
+    position: absolute; inset: 0; z-index: 61; display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.94); color: #fff;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .viewer.on { opacity: 1; pointer-events: auto; }
+  .display .viewer { padding-top: 54px; }
+  .viewer .viewer-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 52px; padding: 0 16px; flex: none; font-size: 15px; }
+  .viewer .viewer-bar button { border: 0; background: none; font: inherit; font-size: 17px; color: #fff; cursor: pointer; }
+  .viewer .viewer-body { flex: 1; min-height: 0; display: grid; place-items: center; padding: 16px; overflow: auto; }
+  .viewer .viewer-body img { max-width: 100%; max-height: 100%; object-fit: contain; }
   .toast {
-    position: absolute; left: 50%; top: 58px; z-index: 70; transform: translate(-50%, -20px); opacity: 0; pointer-events: none;
+    position: absolute; left: 50%; top: 58px; z-index: 90; transform: translate(-50%, -20px); opacity: 0; pointer-events: none;
     padding: 12px 18px; border-radius: 999px; background: rgba(28, 28, 30, 0.92); color: #fff; font-size: 15px; white-space: nowrap;
     transition: opacity 0.2s, transform 0.25s;
   }
@@ -541,9 +565,31 @@
   // ---------- 畫面 ----------
   const collectScreens = () => { screens = [...screensRoot.querySelectorAll(':scope > .screen')]; };
 
+  // ---------- 疊加層（sheet、alert、modal、viewer）：疊在來源畫面上，後開的在上面 ----------
+  const OVERLAYS = '.sheet, .alert, .modal, .viewer';
+  let overlayStack = [];
+
+  // 檢視器是深色底，打開時狀態列改白字
+  const syncStatus = () => {
+    const top = overlayStack.at(-1);
+    $('display').classList.toggle('light-status', top ? top.classList.contains('viewer') : screens[index]?.dataset.status === 'light');
+  };
+
+  // scrim 永遠放在最上層的正下方，下面的層維持原樣
+  const syncOverlays = () => {
+    overlayStack.forEach((el, n) => { el.style.zIndex = 61 + n * 2; });
+    const scrim = $('scrim');
+    scrim.style.zIndex = overlayStack.length ? 60 + (overlayStack.length - 1) * 2 : '';
+    scrim.classList.toggle('on', overlayStack.length > 0);
+    syncStatus();
+  };
+
+  const hideOverlay = (el) => { el.classList.remove('on'); el.style.zIndex = ''; };
+
   function closeOverlays() {
-    surface.querySelectorAll('.sheet.on, .alert.on').forEach((el) => el.classList.remove('on'));
-    $('scrim').classList.remove('on');
+    overlayStack.forEach(hideOverlay);
+    overlayStack = [];
+    syncOverlays();
   }
 
   function show(i, motion = 'push') {
@@ -556,7 +602,7 @@
     if (motion === 'push' || motion === 'pop') screen.classList.add(motion === 'pop' ? 'enter-pop' : 'enter-push');
     screen.scrollTop = 0;
     index = next;
-    $('display').classList.toggle('light-status', screen.dataset.status === 'light');
+    syncStatus();
     $('url').textContent = `${location.hostname || 'example.com'}${screen.dataset.url || `/${screen.dataset.id}`}`;
 
     navButtons.forEach((b, n) => b && b.classList.toggle('on', n === index));
@@ -589,11 +635,20 @@
   };
   window.openOverlay = (id) => {
     const el = document.getElementById(id);
-    if (!el) return;
-    // sheet 與 alert 移到 surface 之下，才能蓋住整個畫面
+    if (!el || !el.matches(OVERLAYS) || overlayStack.includes(el)) return;
+    // 移到 surface 之下，才能蓋住整個畫面；來源畫面保持不動
     if (el.parentElement !== surface) surface.appendChild(el);
-    $('scrim').classList.add('on');
+    overlayStack = [...overlayStack, el];
+    syncOverlays();
     el.classList.add('on');
+  };
+  // 只關最上層，下面的層與來源畫面維持原樣
+  window.closeTopOverlay = () => {
+    const top = overlayStack.at(-1);
+    if (!top) return;
+    hideOverlay(top);
+    overlayStack = overlayStack.slice(0, -1);
+    syncOverlays();
   };
 
   // ---------- 畫面內的互動 ----------
@@ -602,12 +657,12 @@
     if (!el) return;
     if (el.matches('.segmented button')) el.parentElement.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === el));
     if (el.dataset.toast) toast(el.dataset.toast);
-    if ('close' in el.dataset) closeOverlays();
+    if ('close' in el.dataset) closeTopOverlay();
     if (el.dataset.open) { e.preventDefault(); openOverlay(el.dataset.open); }
     if ('back' in el.dataset) { e.preventDefault(); back(); }
     if (el.dataset.go) { e.preventDefault(); go(el.dataset.go); }
   });
-  $('scrim').addEventListener('click', closeOverlays);
+  $('scrim').addEventListener('click', () => closeTopOverlay());
 
   // ---------- 左側：畫面清單 ----------
   const navButtons = [];
@@ -642,8 +697,8 @@
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const resetScreens = () => {
-    surface.querySelectorAll(':scope > .sheet, :scope > .alert').forEach((el) => el.remove());
     closeOverlays();
+    surface.querySelectorAll(OVERLAYS.split(', ').map((s) => `:scope > ${s}`).join(', ')).forEach((el) => el.remove());
     screensRoot.innerHTML = pristine;
     collectScreens();
     backStack = [];
@@ -909,7 +964,7 @@
     if (e.target.matches('input, textarea, select')) return;
     if (e.key === 'ArrowRight') { stopDemo(); show(index + 1, 'push'); }
     if (e.key === 'ArrowLeft') { stopDemo(); show(index - 1, 'pop'); }
-    if (e.key === 'Escape') closeOverlays();
+    if (e.key === 'Escape') closeTopOverlay();
     if (e.key === 'r' || e.key === 'R') resetAll();
   });
   window.addEventListener('resize', fit);
