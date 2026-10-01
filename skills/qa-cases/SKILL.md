@@ -75,7 +75,7 @@ description: >
 
 ### 4. 互動原型（`design/prototype.html`）
 
-**一律要做**，app 與 web 都一樣，使用者不必特別要求；沒有 Codebase 或設計稿時依需求畫線框。純 API、批次、後端邏輯也要做，改成呈現使用者或營運人員看到結果的地方。規格見 `references/prototype.md`：
+**一律要做**，app 與 web 都一樣，使用者不必特別要求。畫面依設計稿與前端程式碼還原：兩者都有直接做；缺任一先問使用者一次，再依手上的依據還原，不自行猜測（見 `references/prototype.md` 的「畫面還原」）。純 API、批次、後端邏輯也要做，改成呈現使用者或營運人員看到結果的地方。規格見 `references/prototype.md`：
 1. 複製 `assets/prototype-starter.html` 到 `qa path design-dir` 下的 `prototype.html`。
    - App 產品設為 `data-platform="app"`，只有 iPhone 17 Pro。
    - 網頁產品設為 `data-platform="web"`，有桌面瀏覽器與手機兩種檢視，同一份畫面依寬度自動切換版面。
