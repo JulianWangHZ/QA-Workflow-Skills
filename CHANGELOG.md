@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.6.0...v0.7.0) (2026-10-01)
+
+
+### Features
+
+* **qa-cases:** restore prototype from design and frontend code ([#12](https://github.com/JulianWangHZ/QA-Workflow-Skills/issues/12)) ([b77d8c7](https://github.com/JulianWangHZ/QA-Workflow-Skills/commit/b77d8c740259d44df3f890a4a537876d8e2cc06d))
+
 ## [0.6.0](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.5.0...v0.6.0) (2026-09-30)
 
 
