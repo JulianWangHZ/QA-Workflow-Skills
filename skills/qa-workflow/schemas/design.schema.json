@@ -361,6 +361,30 @@
       "items": {
         "type": "string"
       }
+    },
+    "pmAcceptance": {
+      "description": "給 PM／RD 對齊的驗收子集（約 10 條、上限 12）；測試範圍仍是全部情境",
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "required": ["caseId", "title", "summary", "expected"],
+            "properties": {
+              "caseId": { "type": "string", "pattern": "^TC-\\d+$" },
+              "title": { "type": "string", "minLength": 1 },
+              "summary": { "type": "string", "minLength": 1 },
+              "expected": { "type": "string", "minLength": 1 },
+              "relatedCaseIds": { "type": "array", "items": { "type": "string", "pattern": "^TC-\\d+$" } }
+            }
+          }
+        },
+        "openQuestions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "rationale": { "type": "string" }
+      }
     }
   },
   "definitions": {

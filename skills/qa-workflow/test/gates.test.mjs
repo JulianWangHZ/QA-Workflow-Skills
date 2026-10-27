@@ -89,6 +89,19 @@ test('cases：原型一律必做，skipReason 不能跳過；file 必須存在�
   assert.match(checkCases(load('[{"id":"TC-1","steps":[{}]},{"id":"TC-2","noUi":true}]'), fx.risks()).errors.join(), /reason/);
 });
 
+test('cases：PM 驗收清單要引用存在且不重複的情境，沒挑只警告、超過 12 條擋下', () => {
+  const item = fx.design().pmAcceptance.items[0];
+  const pm = (items) => withDesign({ pmAcceptance: { items } });
+  assert.match(errorsOf(pm([{ ...item, caseId: 'TC-9' }])), /TC-9/);
+  assert.match(errorsOf(pm([{ ...item, relatedCaseIds: ['TC-8'] }])), /TC-8/);
+  assert.match(errorsOf(pm([item, item])), /重複：TC-1/);
+  assert.match(errorsOf(pm(Array.from({ length: 13 }, () => item))), /12/);
+  const { pmAcceptance: _omitted, ...withoutPm } = fx.design();
+  const missing = checkCases(fx.loaded({ design: withoutPm }), fx.risks());
+  assert.deepEqual(missing.errors, []);
+  assert.match(missing.warnings.join(), /pmAcceptance/);
+});
+
 // 把 riskCoverage 再扣 20 分，總分變成 70
 const lowScore = (rounds) => {
   const review = fx.selfReview();
@@ -162,6 +175,7 @@ const onlyTc2Review = () => {
 test('cases：P0/P1 風險延後處理需寫理由，並產生警告', () => {
   const [, c2] = fx.cases();
   const design = { ...fx.design(), matrices: [], coverage: { techniques: fx.design().coverage.techniques.map((t) => (t.applicable ? { ...t, caseIds: ['TC-2'] } : t)), deferredRisks: [{ riskId: 'R-1', reason: '需求未定' }] }, selfReview: onlyTc2Review() };
+  delete design.pmAcceptance;
   const prototypeHtml = fx.PROTOTYPE.replace(/\{"id":"TC-1".*?\]\},/, '');
   const r = checkCases(fx.loaded({ design, cases: [c2], prototypeHtml }), fx.risks());
   assert.deepEqual(r.errors, []);

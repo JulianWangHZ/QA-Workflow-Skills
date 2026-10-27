@@ -1,4 +1,4 @@
-// 產生確認階段的審閱頁：產生方式 → 測試矩陣 → 狀態機 → 互動原型 → 驗收清單（PM）→ BDD Feature（QA）。
+// 產生確認階段的審閱頁：產生方式 → 測試矩陣 → 狀態機 → 互動原型 → PM 驗收清單 → QA 驗收清單 → BDD Feature。
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { TYPES } from './gherkin.mjs';
@@ -6,7 +6,7 @@ import { countPrototypeScreens, readPrototypeScenarios } from './design.mjs';
 import { REVIEW_RUBRIC } from './self-review.mjs';
 
 const asset = (name) => readFileSync(fileURLToPath(new URL(`../assets/${name}`, import.meta.url)), 'utf8');
-const PAGES = ['overview', 'matrix', 'state', 'prototype', 'acceptance', 'bdd'];
+const PAGES = ['overview', 'matrix', 'state', 'prototype', 'pm', 'acceptance', 'bdd'];
 
 export const escapeHtml = (value) => String(value ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -231,17 +231,57 @@ const statePage = ({ design, r }) => {
 
 // ---------- 4. 互動原型 ----------
 
-const prototypePage = ({ design, r }) => {
+// 原型載入後由審閱頁傳入：情境類型（顯示標籤）與 PM 驗收清單（預設只列 PM 情境）
+const caseMeta = (cases, design, dict) => {
+  const pmById = new Map((design.pmAcceptance?.items ?? []).map((i) => [i.caseId, i]));
+  return cases.map((c) => ({
+    id: c.id, type: c.type, typeLabel: dict.type[c.type] ?? c.type,
+    ...(pmById.has(c.id) ? { pm: true, pmTitle: pmById.get(c.id).title } : {})
+  }));
+};
+
+const prototypePage = ({ design, cases, dict, r }) => {
   const proto = design.prototype;
   if (!proto.file) return intro(r.intro.prototype) + `<p class="muted">${escapeHtml(r.noPrototype)}${escapeHtml(proto.skipReason)}</p>`;
   const src = `design/${proto.file.split('/').map(encodeURIComponent).join('/')}`;
   return [
     `<p class="intro">${escapeHtml(r.intro.prototype)} <a class="proto-open" href="${src}" target="_blank" rel="noopener">${escapeHtml(r.openPrototype)} ↗</a></p>`,
-    `<iframe class="proto-frame" src="${src}" title="prototype"></iframe>`
+    `<iframe class="proto-frame" src="${src}" title="prototype" data-case-meta="${escapeHtml(JSON.stringify(caseMeta(cases, design, dict)))}"></iframe>`
   ].join('\n');
 };
 
-// ---------- 5. 驗收清單（PM） ----------
+// ---------- 5. PM 驗收清單 ----------
+
+const typeTag = (type, dict) => {
+  const cls = type === 'boundary' ? 'tag boundary' : type === 'error' ? 'tag p0' : 'tag';
+  return `<span class="${cls}">${escapeHtml(dict.type[type] ?? type)}</span>`;
+};
+
+const pmPage = ({ design, cases, dict, r }) => {
+  const pm = design.pmAcceptance;
+  const head = `<div class="intro-row">${intro(r.intro.pm)}<span class="progress"><span class="meter"><i id="pm-meter"></i></span><span id="pm-progress" data-label="${escapeHtml(r.progress)}"></span></span></div>`;
+  if (!pm?.items.length) return head + `<p class="muted">${escapeHtml(r.noPm)}</p>`;
+  const byId = new Map(cases.map((c) => [c.id, c]));
+  const hasPrototype = Boolean(design.prototype.file);
+  const cards = pm.items.map((item) => {
+    const c = byId.get(item.caseId);
+    const ids = [item.caseId, ...(item.relatedCaseIds ?? [])];
+    const links = ids.map((id) => `<li>${refs([id])}</li>`).join('')
+      + (hasPrototype ? `<li class="demo"><a class="ref" href="#prototype" data-play="${escapeHtml(item.caseId)}">${escapeHtml(r.playDemo)}</a></li>` : '');
+    return `<article class="scenario" id="pm-${escapeHtml(item.caseId)}" data-pm="${escapeHtml(item.caseId)}">
+    <label class="check"><input type="checkbox" aria-label="${escapeHtml(item.caseId)}"></label>
+    <div class="head"><span class="sid">${escapeHtml(item.caseId)}</span><h3><span class="t">${escapeHtml(item.title)}</span></h3><span class="tags">${c ? typeTag(c.type, dict) + priorityTag(c.priority) : ''}</span></div>
+    <div class="gwt">
+      <div><h4>${escapeHtml(r.pmSummary)}</h4>${bullets([item.summary])}</div>
+      <div class="then"><h4>${escapeHtml(r.then)}</h4>${bullets([item.expected])}</div>
+      <div><h4>${escapeHtml(r.pmCases)}</h4><ul>${links}</ul></div>
+    </div>
+  </article>`;
+  }).join('');
+  return head + cards + row(r.rows.pmQuestions, notes(pm.openQuestions ?? []));
+};
+
+// ---------- 6. QA 驗收清單 ----------
 
 const bullets = (items) => `<ul>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join('') || '<li class="faint">—</li>'}</ul>`;
 
@@ -294,7 +334,7 @@ const acceptancePage = ({ features, cases, dict, r }) => {
   return intro(r.intro.acceptance) + toolbar + sections + `<p class="empty-filter" id="ac-empty">${escapeHtml(r.noMatch)}</p>`;
 };
 
-// ---------- 6. BDD Feature（QA） ----------
+// ---------- 7. BDD Feature ----------
 
 const KEYWORD = /^(\s*)(Feature|Background|Rule|Scenario Outline|Scenario Template|Scenario|Example|Examples|Scenarios)(\s*:)/;
 const STEP = /^(\s*)(Given|When|Then|And|But|\*)(?=\s)/;
@@ -356,7 +396,7 @@ export const renderCasesReview = ({
   const features = ordered.map((f) => ({ feature: f.feature, file: f.file }));
   const data = { context, risks, design, cases, files: ordered, features, warnings, minReviewScore, confirmationStatus, stage, prototypeHtml, dict, r };
 
-  const builders = { overview: overviewPage, matrix: matrixPage, state: statePage, prototype: prototypePage, acceptance: acceptancePage, bdd: bddPage };
+  const builders = { overview: overviewPage, matrix: matrixPage, state: statePage, prototype: prototypePage, pm: pmPage, acceptance: acceptancePage, bdd: bddPage };
   // 分頁元素 id 加前綴，避免瀏覽器依網址 hash 自動捲動到分頁位置
   const pages = PAGES.map((id) => `<div class="page" id="page-${id}" data-page="${id}">${builders[id](data)}</div>`).join('\n');
   const tabs = PAGES.map((id, i) => `<a href="#${id}"><span class="n">${i + 1}</span>${escapeHtml(r.tabs[id])}</a>`).join('');

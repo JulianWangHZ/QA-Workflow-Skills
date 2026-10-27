@@ -31,9 +31,11 @@
 - ✗ 情境示範（qa-scenarios）不是合法 JSON；引用不存在的情境；重複；沒有步驟；**有情境沒有示範**；`noUi` 沒有寫 reason
 - ✗ 情境引用不存在的風險；P0/P1 風險沒有情境覆蓋，也不在 `deferredRisks`
 - ✗ 自審分數低於 `minReviewScore`，且輪數還沒用完
+- ✗ PM 驗收清單超過 12 條；引用不存在的情境；同一情境重複
 - ⚠ P0/P1 風險只有 `type: positive` 的情境；P0/P1 風險被延後處理
 - ⚠ 矩陣使用的技法在清單中標為 N/A；轉換中的狀態不在 `states`
 - ⚠ 自審輪數用完仍未及格
+- ⚠ 沒有 PM 驗收清單（`pmAcceptance`）
 
 通過後，CLI 會產生 `cases.json` 與 `cases-review.html`，stage 進入 `confirm`。
 

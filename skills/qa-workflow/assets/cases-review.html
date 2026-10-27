@@ -190,7 +190,10 @@ td.skipped em { font-style: normal; font-weight: 600; margin-right: 6px; }
 .rule-head .count { margin-left: 8px; font-family: var(--mono); font-size: var(--fs-xs); color: var(--slate-2); font-weight: 400; }
 
 .scenario { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 0 var(--s3); padding: var(--s5) 0; border-bottom: 1px solid var(--rule); }
-.rule-head + .scenario, .story + .scenario { border-top: 1px solid var(--ink); }
+.rule-head + .scenario, .story + .scenario, .intro-row + .scenario { border-top: 1px solid var(--ink); }
+.intro-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s5); border-bottom: 1px solid var(--rule); }
+.intro-row .intro { max-width: none; }
+@media (max-width: 860px) { .intro-row { flex-direction: column; align-items: flex-start; gap: 0; } }
 .scenario .check { padding-top: 3px; }
 .scenario .check input {
   appearance: none; width: 20px; height: 20px; margin: 0; border: 1.5px solid var(--ink); border-radius: 4px; cursor: pointer; background: var(--paper);
@@ -210,6 +213,7 @@ td.skipped em { font-style: normal; font-weight: 600; margin-right: 6px; }
 .gwt ul { margin: 0; padding: 0; list-style: none; font-size: var(--fs-md); }
 .gwt li { padding: 2px 0 2px 14px; position: relative; }
 .gwt li::before { content: ""; position: absolute; left: 0; top: 12px; width: 6px; height: 1px; background: var(--slate-2); }
+.gwt li.demo::before { display: none; }
 .gwt .then li::before { width: 8px; height: 4px; top: 8px; border: 1.5px solid var(--marker-ink); border-top: 0; border-right: 0; background: none; transform: rotate(-45deg); }
 .examples { grid-column: 2; margin-top: var(--s4); max-width: 560px; }
 .examples h4 { margin: 0 0 4px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.06em; color: var(--slate-2); }
@@ -306,30 +310,33 @@ pre.code .ln:hover { background: var(--wash); }
   window.addEventListener('hashchange', route);
   route();
 
-  // 驗收清單：搜尋、篩選、核對勾選（存在瀏覽器 localStorage）
-  const storeKey = 'qa-review:{{runId}}';
-  const checked = new Set(JSON.parse(localStorage.getItem(storeKey) || '[]'));
-  const items = [...document.querySelectorAll('.scenario[data-case]')];
-  const progressText = document.getElementById('ac-progress');
-  const meter = document.getElementById('ac-meter');
-  const updateProgress = () => {
-    if (!progressText) return;
-    progressText.textContent = progressText.dataset.label.replace('{n}', checked.size).replace('{total}', items.length);
-    meter.style.width = items.length ? `${(checked.size / items.length) * 100}%` : '0';
-  };
-  items.forEach((item) => {
-    const box = item.querySelector('input[type=checkbox]');
-    const sync = () => item.classList.toggle('checked', box.checked);
-    box.checked = checked.has(item.dataset.case);
-    sync();
-    box.addEventListener('change', () => {
-      box.checked ? checked.add(item.dataset.case) : checked.delete(item.dataset.case);
+  // 驗收清單（PM／QA 各一份）：核對勾選（存在瀏覽器 localStorage）
+  const setupChecklist = (storeKey, items, progressText, meter, idOf) => {
+    // 重產後情境可能變少，只保留本頁仍存在的 id，否則勾選數超過總數會讓進度條撐爆
+    const currentIds = new Set(items.map(idOf));
+    const checked = new Set(JSON.parse(localStorage.getItem(storeKey) || '[]').filter((id) => currentIds.has(id)));
+    const updateProgress = () => {
+      if (!progressText) return;
+      progressText.textContent = progressText.dataset.label.replace('{n}', checked.size).replace('{total}', items.length);
+      meter.style.width = items.length ? `${(checked.size / items.length) * 100}%` : '0';
+    };
+    items.forEach((item) => {
+      const box = item.querySelector('input[type=checkbox]');
+      const sync = () => item.classList.toggle('checked', box.checked);
+      box.checked = checked.has(idOf(item));
       sync();
-      localStorage.setItem(storeKey, JSON.stringify([...checked]));
-      updateProgress();
+      box.addEventListener('change', () => {
+        box.checked ? checked.add(idOf(item)) : checked.delete(idOf(item));
+        sync();
+        localStorage.setItem(storeKey, JSON.stringify([...checked]));
+        updateProgress();
+      });
     });
-  });
-  updateProgress();
+    updateProgress();
+  };
+  const items = [...document.querySelectorAll('.scenario[data-case]')];
+  setupChecklist('qa-review:{{runId}}', items, document.getElementById('ac-progress'), document.getElementById('ac-meter'), (item) => item.dataset.case);
+  setupChecklist('qa-review-pm:{{runId}}', [...document.querySelectorAll('.scenario[data-pm]')], document.getElementById('pm-progress'), document.getElementById('pm-meter'), (item) => item.dataset.pm);
 
   const search = document.getElementById('ac-search');
   const priority = document.getElementById('ac-priority');
@@ -345,7 +352,7 @@ pre.code .ln:hover { background: var(--wash); }
       item.hidden = !hit;
       if (hit) visible += 1;
     });
-    document.querySelectorAll('.feature').forEach((f) => { f.hidden = !f.querySelector('.scenario:not([hidden])'); });
+    document.querySelectorAll('#page-acceptance .feature').forEach((f) => { f.hidden = !f.querySelector('.scenario:not([hidden])'); });
     emptyFilter.style.display = visible ? 'none' : 'block';
   };
   if (search) [search, priority, type].forEach((el) => el.addEventListener('input', applyFilter));
@@ -360,8 +367,24 @@ pre.code .ln:hover { background: var(--wash); }
   document.querySelectorAll('.theme-toggle').forEach((btn) => btn.addEventListener('click', () => {
     applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
   }));
-  document.querySelectorAll('iframe.proto-frame').forEach((f) => f.addEventListener('load', () => {
+  const initPrototype = (f) => {
     f.contentWindow?.postMessage({ qaTheme: document.documentElement.dataset.theme }, '*');
+    if (f.dataset.caseMeta) f.contentWindow?.postMessage({ qaCaseMeta: JSON.parse(f.dataset.caseMeta) }, '*');
+  };
+  // 三種時序都要接住：原型已載入完（立即送）、之後才載入（load）、原型就緒時主動通知
+  document.querySelectorAll('iframe.proto-frame').forEach((f) => {
+    initPrototype(f);
+    f.addEventListener('load', () => initPrototype(f));
+  });
+  window.addEventListener('message', (e) => {
+    if (!e.data?.qaPrototypeReady) return;
+    document.querySelectorAll('iframe.proto-frame').forEach((f) => { if (f.contentWindow === e.source) initPrototype(f); });
+  });
+
+  // PM 卡片「看示範」：切到互動原型分頁並請原型播放該情境（原型分頁顯示後 iframe 才有尺寸，延後一下再播）
+  document.querySelectorAll('[data-play]').forEach((link) => link.addEventListener('click', () => {
+    const frame = document.querySelector('iframe.proto-frame');
+    setTimeout(() => frame?.contentWindow?.postMessage({ qaPlay: link.dataset.play }, '*'), 50);
   }));
 
   // 複製 feature 原文

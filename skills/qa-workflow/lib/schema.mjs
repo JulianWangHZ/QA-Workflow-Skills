@@ -1,5 +1,5 @@
 // 零依賴的 JSON Schema 子集驗證器：
-// type、required、properties、items、enum、const、minItems、minLength、pattern、minimum、maximum、本地 $ref。
+// type、required、properties、items、enum、const、minItems、maxItems、minLength、pattern、minimum、maximum、本地 $ref。
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -50,6 +50,9 @@ const validateNode = (root, schema, value, path) => {
   if (Array.isArray(value)) {
     if (schema.minItems !== undefined && value.length < schema.minItems) {
       errors.push(`${path}：至少需要 ${schema.minItems} 項`);
+    }
+    if (schema.maxItems !== undefined && value.length > schema.maxItems) {
+      errors.push(`${path}：最多 ${schema.maxItems} 項，實際 ${value.length} 項`);
     }
     if (schema.items) {
       value.forEach((item, i) => errors.push(...validateNode(root, schema.items, item, `${path}[${i}]`)));

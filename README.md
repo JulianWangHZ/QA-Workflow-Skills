@@ -59,7 +59,7 @@ Everything else runs on its own. The report ends up in `.qa/reports/latest.html`
 ## Why teams use it
 
 - **You decide once.** The only thing Claude asks you for is approval of the scenarios. Your approval is locked in, so the tests always match what you agreed to.
-- **Your PM can read the cases.** Scenarios come with a review page that includes a plain-language checklist and a clickable prototype that acts out each scenario.
+- **Your PM can read the cases.** Scenarios come with a review page that includes a short PM acceptance list (about 10 user-story cases), the full plain-language QA checklist, and a clickable prototype that acts out each scenario.
 - **The verdict isn't an opinion.** Pass, fail and "ready to ship" are calculated from the recorded test results, not written by the model.
 
 ## The eight stages

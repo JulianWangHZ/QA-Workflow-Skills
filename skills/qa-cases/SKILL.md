@@ -14,7 +14,7 @@ description: >
 依序產出下列內容。前一項是後一項的依據：
 
 ```
-測試矩陣 → 狀態機 → 互動原型 → BDD feature → 獨立評審
+測試矩陣 → 狀態機 → 互動原型 → BDD feature → 獨立評審 → PM 驗收清單
 ```
 
 `qa` = `node "<本 skill 目錄>/../qa-workflow/bin/qa.mjs"`
@@ -23,7 +23,7 @@ description: >
 
 | 路徑（`qa path design-dir` 之下） | 內容 | 格式 |
 |---|---|---|
-| `../design.json` | 情境索引（編號、優先級、風險、類型）、測試矩陣、狀態機、技法清單、原型設定、自審 | `../qa-workflow/schemas/design.schema.json` |
+| `../design.json` | 情境索引（編號、優先級、風險、類型）、測試矩陣、狀態機、技法清單、原型設定、自審、PM 驗收清單 | `../qa-workflow/schemas/design.schema.json` |
 | `features/*.feature` | **用例本身**：BDD 情境，是唯一的真實來源 | `references/gherkin.md` |
 | `prototype.html` | 互動原型與情境示範（一律要做） | `references/prototype.md` |
 
@@ -136,11 +136,16 @@ description: >
    - `breakdown`：7 個維度，各含 `score`、`max`、`checked`、`deductions`
    - `notes`：問題清單、重要修正與未採納的理由
 
-### 8. 驗證並回報
+### 8. PM 驗收清單（`design.json` → `pmAcceptance`）
+
+依 `references/pm-acceptance.md` 從全部情境挑約 10 條（上限 12）給 PM／RD 對齊：user story 主要正負向、需要 PM 決定的異常、高價值邊界；元件可見、按鈕可點這類畫面細節不收。只是摘要，測試範圍仍是全部情境。審閱頁會依此產生「PM 驗收清單」分頁，原型也會預設只列這些情境。
+
+### 9. 驗證並回報
 
 1. 執行 `qa validate design`，再執行 `qa validate features`，兩者都修到沒有錯誤。
 2. 回報，內容包含：
    - 情境數，依優先級分佈，以及沒有 `@auto`（人工驗收）的數量
+   - PM 驗收清單條數
    - 矩陣數、狀態轉換數、原型畫面數
    - 評審分數
    - 延後的風險
