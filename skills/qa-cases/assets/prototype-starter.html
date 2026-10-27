@@ -32,6 +32,8 @@
          { "kind": "when",  "text": "我以密碼 \"wrong\" 登入",   "actions": [{ "type": "#pw", "text": "wrong" }, { "tap": "#login-btn" }] },
          { "kind": "then",  "text": "顯示 \"帳號或密碼錯誤\"",     "actions": [{ "expect": "#pw-hint" }] }
        ] }]
+  情境類型與 PM 驗收清單不必寫在這裡：審閱頁會依 design.json 自動傳給原型（type、pmAcceptance），
+  左側顯示類型標籤，並預設只列 PM 情境、可切換到全部。單獨開啟原型時沒有這些資訊，只列全部情境。
     actions：go（畫面 id）、type（選擇器 + text）、tap（選擇器）、expect（選擇器，會被標示出來）、wait（毫秒）、call（函式名稱 + args）
     device 只在 web 使用：desktop 或 mobile，省略時沿用目前檢視。
 -->
@@ -89,6 +91,10 @@
   .pane[hidden] { display: none; }
 
   /* 情境清單 */
+  /* PM 驗收／全部情境 切換 */
+  .sc-filter { display: flex; gap: 6px; padding: 12px 22px; border-bottom: 1px solid var(--rule); }
+  .sc-filter .pbtn.on { background: var(--marker); border-color: var(--marker); color: var(--on-marker); font-weight: 600; }
+  .sc-filter .n { margin-left: 5px; font-family: var(--mono); font-size: 11px; }
   .sc { border-bottom: 1px solid var(--rule); }
   .sc > button {
     display: grid; grid-template-columns: 52px 1fr 16px; gap: 6px; align-items: baseline; width: 100%;
@@ -97,6 +103,12 @@
   .sc > button:hover { background: var(--wash); }
   .sc .sid { font-family: var(--mono); font-size: 11.5px; color: var(--slate); }
   .sc .stitle { font-size: 13.5px; line-height: 1.45; }
+  .sc .stype { display: inline-block; margin-left: 6px; padding: 0 5px; border: 1px solid var(--rule); border-radius: 3px; font-size: 10.5px; font-weight: 400; line-height: 16px; color: var(--slate); vertical-align: 1px; white-space: nowrap; }
+  .sc .stype[data-type="boundary"] { border-color: #e8651a; color: #a8430a; font-weight: 600; }
+  :root[data-theme="dark"] .sc .stype[data-type="boundary"] { border-color: #f07a33; color: #ff9c5e; }
+  .sc .stype[data-type="error"] { border-color: #d93025; color: #a3201a; font-weight: 600; }
+  :root[data-theme="dark"] .sc .stype[data-type="error"] { border-color: #f05a4f; color: #ff8a80; }
+  .sc .stype[data-type="negative"], .sc .stype[data-type="permission"] { border-color: var(--slate); }
   .sc .play { font-size: 11px; color: var(--slate-2); }
   .sc.on > button { background: var(--wash); }
   .sc.on .stitle { font-weight: 600; }
@@ -149,6 +161,7 @@
     font: inherit; font-size: 12.5px; color: var(--ink); cursor: pointer;
   }
   .pbtn:hover { border-color: var(--ink); }
+  .pbtn[hidden] { display: none; }
   .controls .count { margin-left: auto; align-self: center; font-family: var(--mono); font-size: 12px; color: var(--slate-2); }
   .hint { padding: 0 22px 14px; font-size: 11.5px; color: var(--slate-2); }
 
@@ -444,7 +457,7 @@
       <button type="button" class="pbtn" id="p-next" aria-label="下一個畫面">→</button>
       <span class="count" id="p-count"></span>
     </div>
-    <p class="hint">點選情境會自動示範，再點一次停止；點任一步驟可從該步驟播放。畫面內也可以直接點擊與輸入，右上角 ↺ 可重置（或鍵盤 R）。</p>
+    <p class="hint">點選情境會自動示範，再點一次暫停、暫停中再點一次停止；點任一步驟可從該步驟播放。畫面內也可以直接點擊與輸入，右上角 ↺ 可重置（或鍵盤 R）。</p>
   </aside>
 
   <div class="stage" id="stage">
@@ -543,6 +556,21 @@
   // ---------- 主題（跟隨審閱頁） ----------
   window.addEventListener('message', (e) => {
     if (e.data && (e.data.qaTheme === 'dark' || e.data.qaTheme === 'light')) document.documentElement.dataset.theme = e.data.qaTheme;
+    // 審閱頁依 design.json 傳入情境類型與 PM 驗收清單
+    if (e.data && Array.isArray(e.data.qaCaseMeta)) {
+      const meta = new Map(e.data.qaCaseMeta.map((m) => [m.id, m]));
+      scenarios.forEach((sc) => Object.assign(sc, meta.get(sc.id) ?? {}));
+      renderScenarioList();
+      setFilter('pm');
+    }
+    // 審閱頁 PM 卡片的「看示範」：切到 PM 清單並播放對應情境
+    if (e.data && e.data.qaPlay) {
+      const i = scenarios.findIndex((sc) => sc.id === e.data.qaPlay);
+      if (i < 0) return;
+      showPane('scenarios');
+      setFilter(scenarios[i].pm ? 'pm' : 'all');
+      if (!scenarios[i].noUi) playScenario(i);
+    }
   });
 
   // ---------- 裝置 ----------
@@ -754,6 +782,7 @@
       el.focus({ preventScroll: true });
       el.value = '';
       for (const ch of text) {
+        await waitWhilePaused(token);
         if (token !== run) return;
         el.value += ch;
         el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -799,12 +828,25 @@
       pane.innerHTML = '<p class="empty-pane">這個原型還沒有情境示範。在 qa-scenarios 加上情境後，點選即可自動播放。</p>';
       return;
     }
-    pane.replaceChildren(...scenarios.map((sc, i) => {
+    const pmCount = scenarios.filter((sc) => sc.pm).length;
+    const filterBar = document.createElement('div');
+    filterBar.className = 'sc-filter';
+    filterBar.hidden = pmCount === 0;
+    filterBar.innerHTML = `<button type="button" class="pbtn" data-filter="pm">PM 驗收<span class="n">${pmCount}</span></button><button type="button" class="pbtn" data-filter="all">全部情境<span class="n">${scenarios.length}</span></button>`;
+    filterBar.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => setFilter(b.dataset.filter)));
+    pane.replaceChildren(filterBar, ...scenarios.map((sc, i) => {
       const item = document.createElement('div');
       item.className = 'sc';
-      item.innerHTML = `<button type="button"><span class="sid"></span><span class="stitle"></span><span class="play">▶</span></button>`;
+      item.innerHTML = `<button type="button"><span class="sid"></span><span class="stitle"><span class="stext"></span></span><span class="play">▶</span></button>`;
       item.querySelector('.sid').textContent = sc.id;
-      item.querySelector('.stitle').textContent = sc.title || '';
+      item.querySelector('.stext').textContent = sc.title || '';
+      if (sc.type) {
+        const typeTag = document.createElement('span');
+        typeTag.className = 'stype';
+        typeTag.dataset.type = sc.type;
+        typeTag.textContent = sc.typeLabel || sc.type;
+        item.querySelector('.stitle').appendChild(typeTag);
+      }
       if (sc.noUi) {
         // 沒有畫面可以示範的情境：列出來並說明原因，點擊只展開說明
         item.classList.add('no-ui');
@@ -827,23 +869,68 @@
         return item;
       }
       item.querySelector('button').addEventListener('click', () => {
-        // 正在播放的情境：再點一次就停止
-        const status = item.querySelector('.sc-actions .status');
-        if (item.classList.contains('on') && status?.dataset.state === 'playing') stopDemo();
+        // 播放中點一次暫停，暫停中再點一次才完全停止
+        const state = item.querySelector('.sc-actions .status')?.dataset.state;
+        if (item.classList.contains('on') && (state === 'playing' || state === 'paused')) togglePlayback(i);
         else playScenario(i);
       });
       return item;
     }));
   };
 
+  // PM 模式只顯示帶 pm 的情境並改用 PM 標題；隱藏而非移除，情境索引才對得上
+  let filter = 'all';
+  const setFilter = (name) => {
+    filter = scenarios.some((sc) => sc.pm) ? name : 'all';
+    document.querySelectorAll('.sc-filter button').forEach((b) => b.classList.toggle('on', b.dataset.filter === filter));
+    document.querySelectorAll('#pane-scenarios .sc').forEach((item, i) => {
+      const sc = scenarios[i];
+      const isPm = filter === 'pm';
+      item.hidden = isPm && !sc.pm;
+      item.querySelector('.stext').textContent = (isPm && sc.pmTitle) || sc.title || '';
+    });
+    $('n-scenarios').textContent = filter === 'pm' ? scenarios.filter((sc) => sc.pm).length : scenarios.length;
+  };
+
+  // 暫停只擋住下一個動作，已在進行的動畫會跑完，所以停在當下步驟
+  let isPaused = false;
+  let resumeWaiters = [];
+  const waitWhilePaused = async (token) => {
+    while (isPaused && token === run) await new Promise((resolve) => resumeWaiters.push(resolve));
+  };
+  const releaseWaiters = () => resumeWaiters.splice(0).forEach((resolve) => resolve());
+  const setPaused = (paused) => {
+    isPaused = paused;
+    const item = document.querySelector('.sc.on');
+    const status = item?.querySelector('.sc-actions .status');
+    if (status) {
+      status.dataset.state = paused ? 'paused' : 'playing';
+      status.textContent = paused ? '已暫停，按「繼續」接著播，或再按「停止」' : '示範中…';
+      item.querySelector('.sc-actions .toggle').textContent = paused ? '停止' : '暫停';
+      item.querySelector('.sc-actions .resume').hidden = !paused;
+      item.querySelector('.play').textContent = paused ? '❚❚' : '■';
+    }
+    if (!paused) releaseWaiters();
+  };
+  const togglePlayback = (i) => {
+    const state = document.querySelectorAll('.sc')[i].querySelector('.sc-actions .status')?.dataset.state;
+    if (state === 'playing') setPaused(true);
+    else if (state === 'paused') stopDemo();
+    else playScenario(i);
+  };
+
   const stopDemo = () => {
     run += 1;
+    isPaused = false;
+    releaseWaiters();
     document.querySelectorAll('.sc').forEach((el) => {
       el.querySelector('.play').textContent = '▶';
       const btn = el.querySelector('.sc-actions .toggle');
       if (btn) btn.textContent = '重新播放';
       const status = el.querySelector('.sc-actions .status');
-      if (status && status.dataset.state === 'playing') { status.textContent = '已停止，可以點任一步驟從那裡播放'; status.dataset.state = 'stopped'; }
+      const resume = el.querySelector('.sc-actions .resume');
+      if (resume) resume.hidden = true;
+      if (status && (status.dataset.state === 'playing' || status.dataset.state === 'paused')) { status.textContent = '已停止，可以點任一步驟從那裡播放'; status.dataset.state = 'stopped'; }
       el.querySelectorAll('.steps li.active').forEach((li) => li.classList.remove('active'));
     });
   };
@@ -873,11 +960,9 @@
     });
     const actions = document.createElement('div');
     actions.className = 'sc-actions';
-    actions.innerHTML = '<button type="button" class="pbtn toggle"></button><span class="status"></span>';
-    actions.querySelector('.toggle').addEventListener('click', () => {
-      if (actions.querySelector('.status').dataset.state === 'playing') stopDemo();
-      else playScenario(i);
-    });
+    actions.innerHTML = '<button type="button" class="pbtn resume" hidden>繼續</button><button type="button" class="pbtn toggle"></button><span class="status"></span>';
+    actions.querySelector('.toggle').addEventListener('click', () => togglePlayback(i));
+    actions.querySelector('.resume').addEventListener('click', () => setPaused(false));
     item.append(list, actions);
     return item;
   };
@@ -893,7 +978,7 @@
     const status = item.querySelector('.sc-actions .status');
     const toggle = item.querySelector('.sc-actions .toggle');
     item.querySelector('.play').textContent = '■';
-    toggle.textContent = '停止';
+    toggle.textContent = '暫停';
     status.textContent = '示範中…';
     status.dataset.state = 'playing';
 
@@ -915,18 +1000,21 @@
     await sleep(fromStep ? 250 : 500);
 
     for (let n = fromStep; n < steps.length; n += 1) {
+      await waitWhilePaused(token);
       if (token !== run) return;
       rows.forEach((row, k) => { row.classList.toggle('active', k === n); row.classList.toggle('done', k < n); });
       scrollWithin($('pane-scenarios'), rows[n], { align: 'nearest', margin: 48 });
       surface.querySelectorAll('.qa-expect').forEach((el) => el.classList.remove('qa-expect'));
       await sleep(350);
       for (const action of steps[n].actions ?? []) {
+        await waitWhilePaused(token);
         if (token !== run) return;
         const kind = actionOf(action);
         if (kind) await ACTIONS[kind](action, token, false);
       }
       await sleep(450);
     }
+    await waitWhilePaused(token);
     if (token !== run) return;
     rows.forEach((row) => { row.classList.remove('active'); row.classList.add('done'); });
     item.querySelector('.play').textContent = '▶';
@@ -977,6 +1065,9 @@
   collectScreens();
   buildScreenList();
   renderScenarioList();
+  setFilter('pm');
+  // 告訴審閱頁原型已就緒；iframe 的 load 可能早於審閱頁掛上監聽，靠這個補送類型與 PM 清單
+  if (window.parent !== window) window.parent.postMessage({ qaPrototypeReady: true }, '*');
   showPane(scenarios.length ? 'scenarios' : 'screens');
   setDevice(device);
   show(0, 'none');

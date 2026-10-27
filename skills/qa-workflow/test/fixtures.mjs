@@ -81,7 +81,11 @@ export const design = () => ({
   stateMachine: { states: [], transitions: [] },
   coverage: { techniques: techniqueChecklist() },
   prototype: { file: 'prototype.html', platform: 'web' },
-  selfReview: selfReview()
+  selfReview: selfReview(),
+  pmAcceptance: {
+    items: [{ caseId: 'TC-1', title: '密碼錯誤無法登入', summary: '用錯誤密碼登入', expected: '停在登入頁並提示錯誤' }],
+    openQuestions: ['連續錯幾次要鎖帳號？']
+  }
 });
 
 const baseCase = {

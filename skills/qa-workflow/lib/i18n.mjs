@@ -43,13 +43,14 @@ const DICT = {
         confirmed: '這批情境已確認，內容已鎖定。',
         stale: '確認之後，情境、矩陣、狀態機或原型又被修改過，所以先前的確認不再有效。請重新審閱並再次確認，後續步驟才能繼續。'
       },
-      tabs: { overview: '產生方式', matrix: '測試矩陣', state: '狀態機', prototype: '互動原型', acceptance: '驗收清單', bdd: 'BDD Feature' },
+      tabs: { overview: '產生方式', matrix: '測試矩陣', state: '狀態機', prototype: '互動原型', pm: 'PM 驗收清單', acceptance: 'QA 驗收清單', bdd: 'BDD Feature' },
       intro: {
         overview: '完整流程共 8 個階段，下圖標出每個階段的產出與目前進度。用例設計的展開方式列在它下方：先用測試矩陣、狀態機與互動原型系統化展開，再寫成 BDD 情境，最後交給獨立評審打分。',
         matrix: '每一列是一個要驗證的條件組合。有對應情境的列會標出情境編號；不測的列必須寫明理由。',
         state: '功能中的狀態與轉換。允許的轉換都要有情境走過；系統必須阻擋的轉換也要有負向情境驗證。',
         prototype: '在左側點選情境，右側會自動示範該情境的操作與結果；也可以直接在畫面上點擊、輸入，自由走一遍流程。',
-        acceptance: '每個情境一段：前置條件、操作、預期結果。逐條核對後打勾，勾選只存在你的瀏覽器中。',
+        pm: '給 PM 與 RD 對齊的 user story 驗收：主要正向、負向，以及需要 PM 決定的異常與高價值邊界。完整測試範圍見 QA 驗收清單。',
+        acceptance: 'QA 測試範圍：每個情境一段，前置條件、操作、預期結果。逐條核對後打勾，勾選只存在你的瀏覽器中。',
         bdd: '以下 Gherkin 是用例的原文，確認後會直接轉成自動化測試。'
       },
       stepState: { done: '完成', here: '進行中', todo: '尚未開始' },
@@ -75,6 +76,7 @@ const DICT = {
         techniques: ['測試設計技法', '12 種技法逐一判定；不適用必須寫出理由。'],
         review: ['評審', '依評分標準逐項打分；點開每個維度可以看到核對了什麼、為什麼扣分。'],
         questions: ['待釐清', '需要需求方回答的問題，會影響預期結果。'],
+        pmQuestions: ['待釐清', '需要 PM 回答的問題，會影響預期結果。'],
         warnings: ['檢查提醒', '不會擋下流程，但值得確認。'],
         transitions: ['轉換表', '允許與應被阻擋的轉換。'],
         diagram: ['狀態圖', '只畫出允許的轉換。'],
@@ -101,6 +103,7 @@ const DICT = {
         index: ['編號', '情境編號、優先級與風險記在 design.json，不放進 tag']
       },
       boundaryTag: '邊界',
+      pmSummary: '情境說明', pmCases: '對應 QA 情境', playDemo: '▶ 看示範', noPm: '還沒有挑選 PM 驗收情境（design.json 的 pmAcceptance）。',
       stepLegend: { given: '前置條件', when: '操作', then: '預期結果', and: 'And／But 沿用上一個步驟的顏色' },
     },
     label: {
@@ -157,13 +160,14 @@ const DICT = {
         confirmed: 'Signed off and locked.',
         stale: 'Scenarios, matrices, state machine or prototype changed after sign-off, so the sign-off no longer applies. Review and sign off again to continue.'
       },
-      tabs: { overview: 'How it was built', matrix: 'Test matrix', state: 'State machine', prototype: 'Prototype', acceptance: 'Acceptance list', bdd: 'BDD features' },
+      tabs: { overview: 'How it was built', matrix: 'Test matrix', state: 'State machine', prototype: 'Prototype', pm: 'PM acceptance', acceptance: 'QA acceptance', bdd: 'BDD features' },
       intro: {
         overview: 'The workflow has 8 stages; the diagram shows each stage\'s output and where this run stands. Case design is broken down underneath: test matrices, a state machine and a prototype expand the scenarios, which are then written as BDD and scored by an independent reviewer.',
         matrix: 'Each row is a condition combination to verify. Covered rows list their scenarios; rows not tested state why.',
         state: 'States and transitions. Every allowed transition has a scenario; every blocked transition has a negative scenario.',
         prototype: 'Pick a scenario on the left and the device plays it out; you can also click and type freely to walk through the flow.',
-        acceptance: 'One block per scenario: preconditions, action, expected result. Tick each one as you verify it; ticks stay in your browser.',
+        pm: 'User-story acceptance for PM and engineering to agree on: main positive and negative paths, exceptions PM must decide, and high-value boundaries. The full test scope is the QA acceptance list.',
+        acceptance: 'QA test scope: one block per scenario with preconditions, action, expected result. Tick each one as you verify it; ticks stay in your browser.',
         bdd: 'The Gherkin below is the source of truth and becomes the automated tests after sign-off.'
       },
       stepState: { done: 'Done', here: 'In progress', todo: 'Not started' },
@@ -189,6 +193,7 @@ const DICT = {
         techniques: ['Design techniques', 'All 12 techniques are judged; not applicable needs a reason.'],
         review: ['Review', 'Scored against the rubric; open each dimension to see what was checked and why points were taken off.'],
         questions: ['Open questions', 'Answers may change expected results.'],
+        pmQuestions: ['Open questions', 'Questions for PM; answers may change expected results.'],
         warnings: ['Check warnings', 'Not blocking, but worth a look.'],
         transitions: ['Transitions', 'Allowed and blocked transitions.'],
         diagram: ['Diagram', 'Allowed transitions only.'],
@@ -215,6 +220,7 @@ const DICT = {
         index: ['IDs', 'IDs, priority and risks live in design.json, not in tags']
       },
       boundaryTag: 'Boundary',
+      pmSummary: 'Situation', pmCases: 'QA scenarios', playDemo: '▶ Play demo', noPm: 'No PM acceptance cases picked yet (pmAcceptance in design.json).',
       stepLegend: { given: 'precondition', when: 'action', then: 'expected result', and: 'And / But inherit the previous step color' },
     },
     label: {

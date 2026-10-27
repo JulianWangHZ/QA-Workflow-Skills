@@ -54,10 +54,11 @@ context.json → risks.json → design.json + design/features/*.feature + design
 ## 審閱頁
 
 `cases-review.html` 是單一 HTML 檔，沒有外部依賴（狀態圖會嘗試從 CDN 載入 mermaid，離線時退回轉換表）。
-- 驗收清單直接由 Gherkin 轉成白話內容：Background + Given 是前置條件，When 是操作，Then 是預期結果；依 feature 中的段落分組；描述性 tag、`@smoke`、`@邊界`、人工驗收會顯示成標籤，優先級來自索引。
+- PM 驗收清單來自 `design.json` 的 `pmAcceptance`：約 10 條 user story 正負向、需 PM 決定的異常與高價值邊界，沿用情境編號，可連到 QA 情境並直接播放原型示範；原型由審閱頁傳入類型與 PM 名單，預設只列 PM 情境。
+- QA 驗收清單直接由 Gherkin 轉成白話內容：Background + Given 是前置條件，When 是操作，Then 是預期結果；依 feature 中的段落分組；描述性 tag、`@smoke`、`@邊界`、人工驗收會顯示成標籤，優先級來自索引。
 - 深色／淺色模式可以切換，選擇會記在瀏覽器中，並同步給內嵌的原型。
 - 所以 feature 必須用宣告式的業務語言撰寫，這也是評審的評分項目。
-- PM 的勾選狀態存在瀏覽器 localStorage，不會回寫到產物中。
+- PM 與 QA 清單的勾選狀態各自存在瀏覽器 localStorage，不會回寫到產物中。
 
 另外，gate 會對每個 P0/P1 風險檢查兩件事：
 - 必須有用例覆蓋，或明確延後並寫理由。

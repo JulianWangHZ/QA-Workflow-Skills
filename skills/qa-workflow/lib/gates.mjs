@@ -129,6 +129,18 @@ const checkPrototype = (prototype, prototypeHtml, caseIds) => {
   return { errors, warnings };
 };
 
+// PM 驗收清單是給 PM／RD 對齊的子集；沒挑只警告，挑了就要引用存在且不重複的情境
+const checkPmAcceptance = (pm, caseIds) => {
+  if (!pm) return { errors: [], warnings: ['沒有 PM 驗收清單（pmAcceptance）：請挑約 10 條 user story 正負向、需 PM 決定的異常與高價值邊界'] };
+  const errors = [];
+  pm.items.forEach((item) => {
+    [item.caseId, ...(item.relatedCaseIds ?? [])].filter((id) => !caseIds.has(id))
+      .forEach((id) => errors.push(`PM 驗收「${item.title}」引用不存在的情境 ${id}`));
+  });
+  duplicates(pm.items.map((i) => i.caseId)).forEach((id) => errors.push(`PM 驗收清單的情境重複：${id}`));
+  return { errors, warnings: [] };
+};
+
 const checkRiskCoverage = (cases, risks, deferred) => {
   const errors = [];
   const warnings = [];
@@ -164,6 +176,7 @@ export const checkCases = (loaded, risks, config = {}) =>
       checkMatrices(design.matrices, design.coverage.techniques, caseIds),
       checkStateMachine(design.stateMachine, design.coverage.techniques, caseIds),
       checkPrototype(design.prototype, loaded.prototypeHtml, caseIds),
+      checkPmAcceptance(design.pmAcceptance, caseIds),
       checkRiskCoverage(cases, risks ?? { risks: [] }, design.coverage.deferredRisks ?? []),
       checkSelfReview(loaded, risks, { ...DEFAULT_CASE_DESIGN, ...config.caseDesign })
     ];

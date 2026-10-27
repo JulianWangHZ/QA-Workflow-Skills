@@ -58,6 +58,7 @@
 | `prototype` | `file`、`platform`（`app` 或 `web`），一律必填，不接受 `skipReason`。畫面與情境示範寫在原型 HTML 中 |
 | `selfReview` | 評審的 `score`、`rounds`、`breakdown`（7 個維度，各含 `score`、`max`、`checked`、`deductions`，gate 會核對算式與引用）、`notes` |
 | `openQuestions[]` | 待釐清問題 |
+| `pmAcceptance` | PM 驗收清單（選填，缺少時 gate 警告）：`items[]`（`caseId`、`title`、`summary`、`expected`、`relatedCaseIds`，最多 12 條）、`openQuestions[]`、`rationale`。規則見 `../../qa-cases/references/pm-acceptance.md` |
 
 ## design/features/*.feature
 
