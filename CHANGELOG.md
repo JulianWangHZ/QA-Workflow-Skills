@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.7.0...v0.8.0) (2026-10-27)
+
+
+### Features
+
+* **qa-cases:** add PM acceptance list to the review page ([34bfca9](https://github.com/JulianWangHZ/QA-Workflow-Skills/commit/34bfca95924477c1baf8fdc550e0ea84cec63664))
+* **qa-cases:** add PM acceptance list to the review page ([283f5e3](https://github.com/JulianWangHZ/QA-Workflow-Skills/commit/283f5e338adc0578ecb0f424ef2f75b7c4f72df6))
+
 ## [0.7.0](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.6.0...v0.7.0) (2026-10-01)
 
 
