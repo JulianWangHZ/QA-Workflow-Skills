@@ -43,7 +43,7 @@ const DICT = {
         confirmed: '這批情境已確認，內容已鎖定。',
         stale: '確認之後，情境、矩陣、狀態機或原型又被修改過，所以先前的確認不再有效。請重新審閱並再次確認，後續步驟才能繼續。'
       },
-      tabs: { overview: '產生方式', matrix: '測試矩陣', state: '狀態機', prototype: '互動原型', pm: 'PM 驗收清單', acceptance: 'QA 驗收清單', bdd: 'BDD Feature' },
+      tabs: { overview: '產生方式', matrix: '測試矩陣', state: '狀態機', prototype: '互動原型', pm: 'PM 驗收清單', acceptance: 'QA 驗收清單', bdd: 'BDD Feature', changes: '修改紀錄' },
       intro: {
         overview: '完整流程共 8 個階段，下圖標出每個階段的產出與目前進度。用例設計的展開方式列在它下方：先用測試矩陣、狀態機與互動原型系統化展開，再寫成 BDD 情境，最後交給獨立評審打分。',
         matrix: '每一列是一個要驗證的條件組合。有對應情境的列會標出情境編號；不測的列必須寫明理由。',
@@ -103,6 +103,16 @@ const DICT = {
         index: ['編號', '情境編號、優先級與風險記在 design.json，不放進 tag']
       },
       boundaryTag: '邊界',
+      revision: {
+        round: (n) => `第 ${n} 輪修改`, onlyChanged: '只看變更', log: '修改紀錄 →', compare: '對照上一版',
+        previous: '上一版', current: '本版', none: '（無）', newBadge: '新',
+        kind: { added: '新增', modified: '修改', removed: '已移除' }, count: (label, n) => `${label} ${n}`,
+        removedGroup: (n) => `本版移除 ${n} 條（點開看原內容）`,
+        field: { title: '標題', preconditions: '前置條件', steps: '操作', expected: '預期結果', type: '類型', priority: '優先級', summary: '情境說明' },
+        intro: '在確認點每次要求修改都會記一輪，最新在上。PM、QA 驗收清單只標出最新一輪的變更。',
+        cols: ['情境', '變更', '改了哪些欄位'], reason: '修改原因', noReason: '（沒有記錄原因）', noChange: '這一輪沒有改到情境內容。',
+        initial: '初版', initialNote: (n) => `第一次產生審閱頁，共 ${n} 個情境。`
+      },
       pmSummary: '情境說明', pmCases: '對應 QA 情境', playDemo: '▶ 看示範', noPm: '還沒有挑選 PM 驗收情境（design.json 的 pmAcceptance）。',
       stepLegend: { given: '前置條件', when: '操作', then: '預期結果', and: 'And／But 沿用上一個步驟的顏色' },
     },
@@ -160,7 +170,7 @@ const DICT = {
         confirmed: 'Signed off and locked.',
         stale: 'Scenarios, matrices, state machine or prototype changed after sign-off, so the sign-off no longer applies. Review and sign off again to continue.'
       },
-      tabs: { overview: 'How it was built', matrix: 'Test matrix', state: 'State machine', prototype: 'Prototype', pm: 'PM acceptance', acceptance: 'QA acceptance', bdd: 'BDD features' },
+      tabs: { overview: 'How it was built', matrix: 'Test matrix', state: 'State machine', prototype: 'Prototype', pm: 'PM acceptance', acceptance: 'QA acceptance', bdd: 'BDD features', changes: 'Revision log' },
       intro: {
         overview: 'The workflow has 8 stages; the diagram shows each stage\'s output and where this run stands. Case design is broken down underneath: test matrices, a state machine and a prototype expand the scenarios, which are then written as BDD and scored by an independent reviewer.',
         matrix: 'Each row is a condition combination to verify. Covered rows list their scenarios; rows not tested state why.',
@@ -220,6 +230,16 @@ const DICT = {
         index: ['IDs', 'IDs, priority and risks live in design.json, not in tags']
       },
       boundaryTag: 'Boundary',
+      revision: {
+        round: (n) => `Revision ${n}`, onlyChanged: 'Changes only', log: 'Revision log →', compare: 'Compare with previous',
+        previous: 'Previous', current: 'This version', none: '(none)', newBadge: 'New',
+        kind: { added: 'Added', modified: 'Modified', removed: 'Removed' }, count: (label, n) => `${label} ${n}`,
+        removedGroup: (n) => `${n} removed in this version (open to see the original)`,
+        field: { title: 'Title', preconditions: 'Given', steps: 'When', expected: 'Expected result', type: 'Type', priority: 'Priority', summary: 'Situation' },
+        intro: 'Each round of changes requested at sign-off is logged here, newest first. The PM and QA lists mark only the latest round.',
+        cols: ['Scenario', 'Change', 'Fields changed'], reason: 'Reason', noReason: '(no reason recorded)', noChange: 'No scenario content changed in this round.',
+        initial: 'Initial', initialNote: (n) => `First review page, ${n} scenarios.`
+      },
       pmSummary: 'Situation', pmCases: 'QA scenarios', playDemo: '▶ Play demo', noPm: 'No PM acceptance cases picked yet (pmAcceptance in design.json).',
       stepLegend: { given: 'precondition', when: 'action', then: 'expected result', and: 'And / But inherit the previous step color' },
     },

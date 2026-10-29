@@ -7,6 +7,7 @@ import { QaError, canonicalHash, readJson, readJsonIfExists, writeJson, writeTex
 import { ARTIFACT_FILES, findRoot, projectPaths, readCurrentRunId, runPaths } from './paths.mjs';
 import { ARTIFACTS, validateArtifact } from './schema.mjs';
 import { STAGES, advanceState, createState, jumpState, rewindState, stageIndex } from './state.mjs';
+import { loadRevisions, saveRevision, snapshotOf } from './revision.mjs';
 import {
   DEFAULT_CASE_DESIGN, checkCases, checkConfirmation, checkContext, checkPlan, checkProjectFeatures, checkResults, checkReview, checkRisks, checkTasks
 } from './gates.mjs';
@@ -92,6 +93,8 @@ const renderReview = (ctx, design, warnings = [], stage = ctx.state.stage) => {
     loaded: design,
     confirmation,
     confirmationStatus: confirmationStatus(confirmation, design.designHash),
+    revisions: loadRevisions(ctx.run),
+    currentSnapshot: snapshotOf(design.cases, design.design?.pmAcceptance?.items),
     stage,
     warnings,
     minReviewScore: { ...DEFAULT_CASE_DESIGN, ...ctx.config.caseDesign }.minReviewScore,
@@ -364,11 +367,18 @@ export const confirm = ({ cwd, flags, out }) => {
   return 0;
 };
 
-export const rewind = ({ cwd, args, out }) => {
+export const rewind = ({ cwd, args, flags, out }) => {
   const [target] = args;
-  if (!target) throw new QaError('用法：qa rewind <stage>');
+  if (!target) throw new QaError('用法：qa rewind <stage> [--note 修改原因]');
   const ctx = loadRun(cwd);
   const next = rewindState(ctx.state, target, now());
+  // 退回用例設計前，存一份上次審閱過的版本，重產審閱頁時才標得出這一輪改了什麼
+  const reviewed = artifact(ctx, 'cases');
+  if (reviewed && stageIndex(target) <= stageIndex('cases')) {
+    const round = saveRevision(ctx.run, snapshotOf(reviewed.cases, artifact(ctx, 'design')?.pmAcceptance?.items),
+      typeof flags.note === 'string' ? flags.note : '', now());
+    out(`✓ 已記錄第 ${round} 輪修改前的版本`);
+  }
   writeJson(ctx.run.state, next);
   out(`✓ 已退回 ${target}`);
   if (stageIndex(target) <= stageIndex('cases')) out('⚠ 用例若有修改，需要重新給使用者確認（qa confirm）');

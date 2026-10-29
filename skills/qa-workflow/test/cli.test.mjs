@@ -152,6 +152,30 @@ test('確認後修改用例，腳本階段的 gate 會擋下', () => {
   assert.match(res.out, /確認後被修改/);
 });
 
+test('確認點要求修改：rewind 記下修改前版本，重產的審閱頁標出這一輪的變更', () => {
+  const root = makeProject();
+  setupUntilConfirm(root);
+  ok(qa(root, 'rewind', 'cases', '--note', '狀態碼改成 403'));
+  assert.ok(existsSync(join(runDir(root), 'revisions/1.json')));
+
+  putFeature(root, fx.FEATURE.replace('"401"', '"403"'));
+  ok(qa(root, 'gate', 'cases'));
+  const review = readFileSync(join(runDir(root), 'cases-review.html'), 'utf8');
+  assert.match(review, /第 1 輪修改/);
+  assert.match(review, /data-case="TC-1"[^>]*data-change="modified"/);
+  assert.match(review, /<mark>403<\/mark>/);
+  assert.match(review, /data-page="changes"/);
+  assert.match(review, /狀態碼改成 403/);
+});
+
+test('沒有退回修改過，審閱頁不出現修改紀錄', () => {
+  const root = makeProject();
+  setupUntilConfirm(root);
+  const review = readFileSync(join(runDir(root), 'cases-review.html'), 'utf8');
+  assert.doesNotMatch(review, /data-page="changes"/);
+  assert.doesNotMatch(review, /id="only-changed"/);
+});
+
 test('階段不符時 gate 會拒絕', () => {
   const root = makeProject();
   ok(qa(root, 'init'));

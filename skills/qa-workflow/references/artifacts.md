@@ -16,7 +16,8 @@
     │   ├── features/*.feature   # 2 BDD 情境（用例的唯一來源）
     │   └── prototype.html       # 2 互動原型（一律要有）
     ├── cases.json           # 2 由 feature 解析出的情境清單（CLI 產生）
-    ├── cases-review.html    # 2 六分頁審閱頁（CLI 產生）
+    ├── cases-review.html    # 2 審閱頁（CLI 產生）
+    ├── revisions/<n>.json   # ★ 第 n 輪修改前的已審閱版本與修改原因（qa rewind cases 產生）
     ├── confirmation.json    # ★ 確認紀錄與設計 hash（只由 CLI 產生）
     ├── plan/                # 5 planner 的計畫分檔（qa plan-merge 合併）
     ├── plan.json            # 5 每個 @auto 情境的可行性、證據、前置資料、oracle
