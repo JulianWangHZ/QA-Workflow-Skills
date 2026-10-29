@@ -26,8 +26,11 @@ export const loadRevisions = (run) => {
     .sort((a, b) => a.round - b.round);
 };
 
+// 跟上一輪存的內容一樣就不再記一輪，避免出現空的修改紀錄
 export const saveRevision = (run, snapshot, note, savedAt) => {
-  const round = loadRevisions(run).length + 1;
+  const revisions = loadRevisions(run);
+  if (revisions.length && JSON.stringify(revisions.at(-1).snapshot) === JSON.stringify(snapshot)) return null;
+  const round = revisions.length + 1;
   mkdirSync(revisionsDir(run), { recursive: true });
   writeJson(join(revisionsDir(run), `${round}.json`), { round, savedAt, note: note ?? '', snapshot });
   return round;

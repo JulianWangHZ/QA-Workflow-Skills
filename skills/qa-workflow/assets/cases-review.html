@@ -410,7 +410,7 @@ body.only-changed .scenario:not([data-change]) { display: none; }
   const revision = document.querySelector('.rev-banner .rev-label')?.textContent ?? '';
   const checkId = (id, item) => (item.dataset.change ? `${id}@${revision}` : id);
   const checkable = (selector) => [...document.querySelectorAll(selector)].filter((item) => item.dataset.change !== 'removed');
-  const items = [...document.querySelectorAll('.scenario[data-case]')];
+  const items = checkable('.scenario[data-case]');
   setupChecklist('qa-review:{{runId}}', checkable('.scenario[data-case]'), document.getElementById('ac-progress'), document.getElementById('ac-meter'), (item) => checkId(item.dataset.case, item));
   setupChecklist('qa-review-pm:{{runId}}', checkable('.scenario[data-pm]'), document.getElementById('pm-progress'), document.getElementById('pm-meter'), (item) => checkId(item.dataset.pm, item));
 

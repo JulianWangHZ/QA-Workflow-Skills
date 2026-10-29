@@ -377,7 +377,7 @@ export const rewind = ({ cwd, args, flags, out }) => {
   if (reviewed && stageIndex(target) <= stageIndex('cases')) {
     const round = saveRevision(ctx.run, snapshotOf(reviewed.cases, artifact(ctx, 'design')?.pmAcceptance?.items),
       typeof flags.note === 'string' ? flags.note : '', now());
-    out(`✓ 已記錄第 ${round} 輪修改前的版本`);
+    if (round) out(`✓ 已記錄第 ${round} 輪修改前的版本`);
   }
   writeJson(ctx.run.state, next);
   out(`✓ 已退回 ${target}`);

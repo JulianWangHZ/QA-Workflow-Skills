@@ -168,6 +168,16 @@ test('確認點要求修改：rewind 記下修改前版本，重產的審閱頁�
   assert.match(review, /狀態碼改成 403/);
 });
 
+test('退回後沒有改任何內容就再退回，不會多記一輪', () => {
+  const root = makeProject();
+  setupUntilConfirm(root);
+  ok(qa(root, 'rewind', 'cases'));
+  ok(qa(root, 'gate', 'cases'));
+  ok(qa(root, 'rewind', 'cases'));
+  assert.ok(existsSync(join(runDir(root), 'revisions/1.json')));
+  assert.ok(!existsSync(join(runDir(root), 'revisions/2.json')));
+});
+
 test('沒有退回修改過，審閱頁不出現修改紀錄', () => {
   const root = makeProject();
   setupUntilConfirm(root);
