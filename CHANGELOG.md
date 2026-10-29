@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.0](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.8.0...v0.9.0) (2026-10-29)
+
+
+### Features
+
+* **qa-workflow:** log case revisions requested at sign-off ([2b7cd2d](https://github.com/JulianWangHZ/QA-Workflow-Skills/commit/2b7cd2d03095e44b4cd80827bc0578609674e095))
+* **qa-workflow:** log case revisions requested at sign-off ([87003dd](https://github.com/JulianWangHZ/QA-Workflow-Skills/commit/87003dd4685b24e432982a9562f66022cb4b3cb4))
+
+
+### Bug Fixes
+
+* **qa-workflow:** skip no-op revision rounds and removed cards in QA filter ([0090964](https://github.com/JulianWangHZ/QA-Workflow-Skills/commit/00909641ba5c48812ab1e05a552918e9abeea61a))
+
 ## [0.8.0](https://github.com/JulianWangHZ/QA-Workflow-Skills/compare/v0.7.0...v0.8.0) (2026-10-27)
 
 
