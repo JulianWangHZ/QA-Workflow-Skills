@@ -110,6 +110,12 @@
   :root[data-theme="dark"] .sc .stype[data-type="error"] { border-color: #f05a4f; color: #ff8a80; }
   .sc .stype[data-type="negative"], .sc .stype[data-type="permission"] { border-color: var(--slate); }
   .sc .play { font-size: 11px; color: var(--slate-2); }
+  /* 審閱頁傳入的修改標記：放在編號下方，不擠標題列 */
+  .sc .schg { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 600; line-height: 14px; white-space: nowrap; }
+  .sc .schg[data-change="added"] { color: #1a7f37; }
+  .sc .schg[data-change="modified"] { color: #0969da; }
+  :root[data-theme="dark"] .sc .schg[data-change="added"] { color: #3fb950; }
+  :root[data-theme="dark"] .sc .schg[data-change="modified"] { color: #58a6ff; }
   .sc.on > button { background: var(--wash); }
   .sc.on .stitle { font-weight: 600; }
   .sc.on .play { color: var(--ink); }
@@ -557,6 +563,11 @@
   window.addEventListener('message', (e) => {
     if (e.data && (e.data.qaTheme === 'dark' || e.data.qaTheme === 'light')) document.documentElement.dataset.theme = e.data.qaTheme;
     // 審閱頁依 design.json 傳入情境類型與 PM 驗收清單
+    // 審閱頁頁首的「只看變更」同步到原型
+    if (e.data && typeof e.data.qaOnlyChanged === 'boolean') {
+      isChangedOnly = e.data.qaOnlyChanged;
+      setFilter(filter);
+    }
     if (e.data && Array.isArray(e.data.qaCaseMeta)) {
       const meta = new Map(e.data.qaCaseMeta.map((m) => [m.id, m]));
       scenarios.forEach((sc) => Object.assign(sc, meta.get(sc.id) ?? {}));
@@ -847,6 +858,13 @@
         typeTag.textContent = sc.typeLabel || sc.type;
         item.querySelector('.stitle').appendChild(typeTag);
       }
+      if (sc.change) {
+        const changeTag = document.createElement('span');
+        changeTag.className = 'schg';
+        changeTag.dataset.change = sc.change;
+        changeTag.textContent = sc.changeLabel || sc.change;
+        item.querySelector('.sid').appendChild(changeTag);
+      }
       if (sc.noUi) {
         // 沒有畫面可以示範的情境：列出來並說明原因，點擊只展開說明
         item.classList.add('no-ui');
@@ -880,16 +898,17 @@
 
   // PM 模式只顯示帶 pm 的情境並改用 PM 標題；隱藏而非移除，情境索引才對得上
   let filter = 'all';
+  let isChangedOnly = false;
   const setFilter = (name) => {
     filter = scenarios.some((sc) => sc.pm) ? name : 'all';
     document.querySelectorAll('.sc-filter button').forEach((b) => b.classList.toggle('on', b.dataset.filter === filter));
     document.querySelectorAll('#pane-scenarios .sc').forEach((item, i) => {
       const sc = scenarios[i];
       const isPm = filter === 'pm';
-      item.hidden = isPm && !sc.pm;
+      item.hidden = (isPm && !sc.pm) || (isChangedOnly && !sc.change);
       item.querySelector('.stext').textContent = (isPm && sc.pmTitle) || sc.title || '';
     });
-    $('n-scenarios').textContent = filter === 'pm' ? scenarios.filter((sc) => sc.pm).length : scenarios.length;
+    $('n-scenarios').textContent = scenarios.filter((sc) => (filter !== 'pm' || sc.pm) && (!isChangedOnly || sc.change)).length;
   };
 
   // 暫停只擋住下一個動作，已在進行的動畫會跑完，所以停在當下步驟

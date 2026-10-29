@@ -15,7 +15,7 @@ const HELP = `qa-workflow CLI
                                          只做格式驗證，不推進階段
   gate <stage> [--check]                 檢查放行條件，通過後推進到下一階段
   confirm --by <確認者> [--note 備註]    記錄使用者已確認用例（只能在使用者明確同意後執行）
-  rewind <stage>                         退回到較早的階段
+  rewind <stage> [--note 修改原因]       退回到較早的階段；退回用例設計時記錄修改前的版本
   run [--layer unit,api,e2e] [--force]   執行測試並寫入 results.json
   review-checks                          代碼審查的確定性檢查（靜態掃描、檢查指令、審查範圍與 diff 分塊）
   review-merge [--pending] [--summary 文字]

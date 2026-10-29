@@ -4,9 +4,10 @@ import { fileURLToPath } from 'node:url';
 import { TYPES } from './gherkin.mjs';
 import { countPrototypeScreens, readPrototypeScenarios } from './design.mjs';
 import { REVIEW_RUBRIC } from './self-review.mjs';
+import { changeCounts, revisionHistory } from './revision.mjs';
 
 const asset = (name) => readFileSync(fileURLToPath(new URL(`../assets/${name}`, import.meta.url)), 'utf8');
-const PAGES = ['overview', 'matrix', 'state', 'prototype', 'pm', 'acceptance', 'bdd'];
+const PAGES = ['overview', 'matrix', 'state', 'prototype', 'pm', 'acceptance', 'bdd', 'changes'];
 
 export const escapeHtml = (value) => String(value ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -33,6 +34,69 @@ const priorityTag = (p) => `<span class="tag ${p === 'P0' ? 'p0' : p === 'P1' ? 
 const notes = (items, cls = '') => (items.length ? `<ul class="notes ${cls}">${items.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ul>` : '');
 
 const isHigh = (level) => level === 'P0' || level === 'P1';
+
+// ---------- 修改紀錄（只在退回修改過才出現） ----------
+
+const KINDS = ['added', 'modified', 'removed'];
+const changeTag = (kind, r) => `<span class="chg chg-${kind}">${escapeHtml(r.revision.kind[kind])}</span>`;
+const changeAttr = (change) => (change ? ` data-change="${change.kind}"` : '');
+
+// 一列文字：逐字差異把改到的片段包 <mark>；新增的整列也標起來
+const lineHtml = (line, isAdded) => {
+  if (line.parts) return line.parts.map((p) => (p.op === '=' ? escapeHtml(p.text) : `<mark>${escapeHtml(p.text)}</mark>`)).join('');
+  return isAdded ? `<mark>${escapeHtml(line.text)}</mark>` : escapeHtml(line.text);
+};
+
+const compareSide = (lines, label, r, { added = [], padNone = false } = {}) => {
+  const items = lines.map((line) => `<li${line.same ? ' class="same"' : ''}><span>${lineHtml(line, added.includes(line.text))}</span></li>`);
+  if (padNone) items.push(`<li class="none"><span>${escapeHtml(r.revision.none)}</span></li>`);
+  return `<div class="${label}"><span class="lbl">${escapeHtml(label === 'before' ? r.revision.previous : r.revision.current)}</span><ul>${items.join('')}</ul></div>`;
+};
+
+const compareBlock = (change, r) => {
+  if (change?.kind !== 'modified') return '';
+  const fields = Object.entries(change.fields).map(([name, field]) => `<div class="cmp-field"><h5>${escapeHtml(r.revision.field[name] ?? name)}</h5><div class="cmp">${
+    compareSide(field.before, 'before', r, { padNone: field.added.length > 0 })}${compareSide(field.after, 'after', r, { added: field.added })}</div></div>`).join('');
+  return `<details class="compare"><summary>${escapeHtml(r.revision.compare)}</summary>${fields}</details>`;
+};
+
+// 改過的欄位在卡片上只加色條；新增的列加「新」
+const fieldClass = (change, name, base = '') => [base, change?.kind === 'modified' && change.fields[name] ? 'changed' : ''].filter(Boolean).join(' ');
+const markedBullets = (items, change, name, r) => {
+  const added = new Set(change?.kind === 'modified' ? change.fields[name]?.added ?? [] : []);
+  return `<ul>${items.map((i) => `<li>${escapeHtml(i)}${added.has(i) ? `<span class="new">${escapeHtml(r.revision.newBadge)}</span>` : ''}</li>`).join('') || '<li class="faint">—</li>'}</ul>`;
+};
+
+const removedGroup = (cards, r) => (cards.length
+  ? `<details class="removed-group"><summary>${escapeHtml(r.revision.removedGroup(cards.length))}</summary>${cards.join('')}</details>`
+  : '');
+
+const revisionBanner = (rev, r) => {
+  if (!rev) return '';
+  const counts = changeCounts(rev.latest);
+  const tags = KINDS.filter((k) => counts[k] > 0)
+    .map((k) => `<span class="tag chg-${k}">${escapeHtml(r.revision.count(r.revision.kind[k], counts[k]))}</span>`).join('');
+  return `<div class="rev-row"><div class="rev-banner"><span class="rev-label">${escapeHtml(r.revision.round(rev.round))}</span><span class="rev-counts">${tags}</span><button type="button" class="chg-btn" id="only-changed" role="switch" aria-pressed="false"><span class="lbl">${escapeHtml(r.revision.onlyChanged)}</span><span class="n">${counts.total}</span><span class="track" aria-hidden="true"><i></i></span></button></div><a class="ref" href="#changes">${escapeHtml(r.revision.log)}</a></div>`;
+};
+
+const changesPage = ({ rev, cases, r }) => {
+  const anchorOf = (id, diff) => (diff.qa.changes.has(id) ? `#acceptance/${caseAnchor(id)}` : `#pm/pm-${id}`);
+  const rounds = [...rev.history].reverse().map(({ round, note, diff }) => {
+    const ids = [...new Set([...diff.qa.changes.keys(), ...diff.pm.changes.keys()])].sort((a, b) => Number(a.slice(3)) - Number(b.slice(3)));
+    const rows = ids.map((id) => {
+      const change = diff.qa.changes.get(id) ?? diff.pm.changes.get(id);
+      const fields = [diff.qa.changes.get(id), diff.pm.changes.get(id)]
+        .flatMap((c) => (c?.kind === 'modified' ? Object.keys(c.fields) : []));
+      const fieldNames = [...new Set(fields)].map((f) => r.revision.field[f] ?? f).join('、');
+      return [td(`<a class="ref" href="${anchorOf(id, diff)}">${escapeHtml(id)}</a>`), td(changeTag(change.kind, r)), td(escapeHtml(fieldNames || '—'))];
+    });
+    const reason = `<p><b>${escapeHtml(r.revision.reason)}</b>：${escapeHtml(note || r.revision.noReason)}</p>`;
+    return `<section><h3>${escapeHtml(r.revision.round(round))}</h3>${reason}${rows.length ? table(r.revision.cols, rows) : `<p class="muted">${escapeHtml(r.revision.noChange)}</p>`}</section>`;
+  });
+  const initialCount = rev.history[0] ? rev.firstCount : cases.length;
+  const initial = `<section><h3>${escapeHtml(r.revision.initial)}</h3><p class="muted">${escapeHtml(r.revision.initialNote(initialCount))}</p></section>`;
+  return intro(r.revision.intro) + `<div class="changes-log">${rounds.join('')}${initial}</div>`;
+};
 
 // ---------- 1. 產生方式 ----------
 
@@ -232,21 +296,25 @@ const statePage = ({ design, r }) => {
 // ---------- 4. 互動原型 ----------
 
 // 原型載入後由審閱頁傳入：情境類型（顯示標籤）與 PM 驗收清單（預設只列 PM 情境）
-const caseMeta = (cases, design, dict) => {
+const caseMeta = (cases, design, dict, rev) => {
   const pmById = new Map((design.pmAcceptance?.items ?? []).map((i) => [i.caseId, i]));
-  return cases.map((c) => ({
-    id: c.id, type: c.type, typeLabel: dict.type[c.type] ?? c.type,
-    ...(pmById.has(c.id) ? { pm: true, pmTitle: pmById.get(c.id).title } : {})
-  }));
+  return cases.map((c) => {
+    const change = rev?.latest.qa.changes.get(c.id) ?? rev?.latest.pm.changes.get(c.id);
+    return {
+      id: c.id, type: c.type, typeLabel: dict.type[c.type] ?? c.type,
+      ...(pmById.has(c.id) ? { pm: true, pmTitle: pmById.get(c.id).title } : {}),
+      ...(change ? { change: change.kind, changeLabel: dict.review.revision.kind[change.kind] } : {})
+    };
+  });
 };
 
-const prototypePage = ({ design, cases, dict, r }) => {
+const prototypePage = ({ design, cases, dict, r, rev }) => {
   const proto = design.prototype;
   if (!proto.file) return intro(r.intro.prototype) + `<p class="muted">${escapeHtml(r.noPrototype)}${escapeHtml(proto.skipReason)}</p>`;
   const src = `design/${proto.file.split('/').map(encodeURIComponent).join('/')}`;
   return [
     `<p class="intro">${escapeHtml(r.intro.prototype)} <a class="proto-open" href="${src}" target="_blank" rel="noopener">${escapeHtml(r.openPrototype)} ↗</a></p>`,
-    `<iframe class="proto-frame" src="${src}" title="prototype" data-case-meta="${escapeHtml(JSON.stringify(caseMeta(cases, design, dict)))}"></iframe>`
+    `<iframe class="proto-frame" src="${src}" title="prototype" data-case-meta="${escapeHtml(JSON.stringify(caseMeta(cases, design, dict, rev)))}"></iframe>`
   ].join('\n');
 };
 
@@ -257,35 +325,47 @@ const typeTag = (type, dict) => {
   return `<span class="${cls}">${escapeHtml(dict.type[type] ?? type)}</span>`;
 };
 
-const pmPage = ({ design, cases, dict, r }) => {
+const pmPage = ({ design, cases, dict, r, rev }) => {
   const pm = design.pmAcceptance;
   const head = `<div class="intro-row">${intro(r.intro.pm)}<span class="progress"><span class="meter"><i id="pm-meter"></i></span><span id="pm-progress" data-label="${escapeHtml(r.progress)}"></span></span></div>`;
   if (!pm?.items.length) return head + `<p class="muted">${escapeHtml(r.noPm)}</p>`;
   const byId = new Map(cases.map((c) => [c.id, c]));
   const hasPrototype = Boolean(design.prototype.file);
+  const pmChanges = rev?.latest.pm.changes;
   const cards = pm.items.map((item) => {
     const c = byId.get(item.caseId);
+    const change = pmChanges?.get(item.caseId);
     const ids = [item.caseId, ...(item.relatedCaseIds ?? [])];
     const links = ids.map((id) => `<li>${refs([id])}</li>`).join('')
       + (hasPrototype ? `<li class="demo"><a class="ref" href="#prototype" data-play="${escapeHtml(item.caseId)}">${escapeHtml(r.playDemo)}</a></li>` : '');
-    return `<article class="scenario" id="pm-${escapeHtml(item.caseId)}" data-pm="${escapeHtml(item.caseId)}">
+    return `<article class="scenario" id="pm-${escapeHtml(item.caseId)}" data-pm="${escapeHtml(item.caseId)}"${changeAttr(change)}>
     <label class="check"><input type="checkbox" aria-label="${escapeHtml(item.caseId)}"></label>
-    <div class="head"><span class="sid">${escapeHtml(item.caseId)}</span><h3><span class="t">${escapeHtml(item.title)}</span></h3><span class="tags">${c ? typeTag(c.type, dict) + priorityTag(c.priority) : ''}</span></div>
+    <div class="head"><span class="sid">${escapeHtml(item.caseId)}</span><h3><span class="t">${escapeHtml(item.title)}</span>${change ? changeTag(change.kind, r) : ''}</h3><span class="tags">${c ? typeTag(c.type, dict) + priorityTag(c.priority) : ''}</span></div>
+    <div class="gwt">
+      <div${cls(fieldClass(change, 'summary'))}><h4>${escapeHtml(r.pmSummary)}</h4>${bullets([item.summary])}</div>
+      <div${cls(fieldClass(change, 'expected', 'then'))}><h4>${escapeHtml(r.then)}</h4>${bullets([item.expected])}</div>
+      <div><h4>${escapeHtml(r.pmCases)}</h4><ul>${links}</ul></div>
+    </div>${compareBlock(change, r)}
+  </article>`;
+  }).join('');
+  const removed = (rev?.latest.pm.removed ?? []).map((item) => `<article class="scenario" id="pm-${escapeHtml(item.id)}" data-pm="${escapeHtml(item.id)}" data-change="removed">
+    <label class="check"><input type="checkbox" aria-label="${escapeHtml(item.id)}"></label>
+    <div class="head"><span class="sid">${escapeHtml(item.id)}</span><h3><span class="t">${escapeHtml(item.title)}</span>${changeTag('removed', r)}</h3></div>
     <div class="gwt">
       <div><h4>${escapeHtml(r.pmSummary)}</h4>${bullets([item.summary])}</div>
       <div class="then"><h4>${escapeHtml(r.then)}</h4>${bullets([item.expected])}</div>
-      <div><h4>${escapeHtml(r.pmCases)}</h4><ul>${links}</ul></div>
     </div>
-  </article>`;
-  }).join('');
-  return head + cards + row(r.rows.pmQuestions, notes(pm.openQuestions ?? []));
+  </article>`);
+  return head + cards + removedGroup(removed, r) + row(r.rows.pmQuestions, notes(pm.openQuestions ?? []));
 };
 
 // ---------- 6. QA 驗收清單 ----------
 
 const bullets = (items) => `<ul>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join('') || '<li class="faint">—</li>'}</ul>`;
 
-const scenarioBlock = (c, dict, r) => {
+const cls = (value) => (value ? ` class="${value}"` : '');
+
+const scenarioBlock = (c, dict, r, change = null) => {
   const tags = [
     ...(c.labels ?? []).map((l) => `<span class="tag label">${escapeHtml(l.slice(1))}</span>`),
     `<span class="tag">${escapeHtml(dict.type[c.type] ?? c.type)}</span>`,
@@ -294,18 +374,20 @@ const scenarioBlock = (c, dict, r) => {
     c.manual ? `<span class="tag manual">${escapeHtml(r.manualTag)}</span>` : '',
     priorityTag(c.priority)
   ].join('');
-  return `<article class="scenario" id="${caseAnchor(c.id)}" data-case="${escapeHtml(c.id)}" data-priority="${escapeHtml(c.priority)}" data-type="${escapeHtml(c.type)}">
+  return `<article class="scenario" id="${caseAnchor(c.id)}" data-case="${escapeHtml(c.id)}" data-priority="${escapeHtml(c.priority)}" data-type="${escapeHtml(c.type)}"${changeAttr(change)}>
     <label class="check"><input type="checkbox" aria-label="${escapeHtml(c.id)}"></label>
-    <div class="head"><span class="sid">${escapeHtml(c.id)}</span><h3><span class="t">${escapeHtml(c.title)}</span></h3><span class="tags">${tags}</span></div>
+    <div class="head"><span class="sid">${escapeHtml(c.id)}</span><h3><span class="t">${escapeHtml(c.title)}</span>${change ? changeTag(change.kind, r) : ''}</h3><span class="tags">${tags}</span></div>
     <div class="gwt">
-      <div><h4>${escapeHtml(r.given)}</h4>${bullets(c.preconditions)}</div>
-      <div><h4>${escapeHtml(r.when)}</h4>${bullets(c.steps)}</div>
-      <div class="then"><h4>${escapeHtml(r.then)}</h4>${bullets(c.expected)}</div>
-    </div>
+      <div${cls(fieldClass(change, 'preconditions'))}><h4>${escapeHtml(r.given)}</h4>${markedBullets(c.preconditions ?? [], change, 'preconditions', r)}</div>
+      <div${cls(fieldClass(change, 'steps'))}><h4>${escapeHtml(r.when)}</h4>${markedBullets(c.steps ?? [], change, 'steps', r)}</div>
+      <div${cls(fieldClass(change, 'expected', 'then'))}><h4>${escapeHtml(r.then)}</h4>${markedBullets(c.expected ?? [], change, 'expected', r)}</div>
+    </div>${compareBlock(change, r)}
   </article>`;
 };
 
-const acceptancePage = ({ features, cases, dict, r }) => {
+const acceptancePage = ({ features, cases, dict, r, rev }) => {
+  const qaChanges = rev?.latest.qa.changes;
+  const removedQa = rev?.latest.qa.removed ?? [];
   const usedTypes = TYPES.filter((t) => cases.some((c) => c.type === t));
   const toolbar = `<div class="toolbar">
     <input type="search" id="ac-search" placeholder="${escapeHtml(r.search)}" aria-label="${escapeHtml(r.search)}">
@@ -323,15 +405,18 @@ const acceptancePage = ({ features, cases, dict, r }) => {
     const body = groups.map((group) => {
       const members = ordered.filter((c) => groupOf(c) === group);
       const head = group ? `<h3 class="rule-head">${escapeHtml(group)}<span class="count">${members.length}</span></h3>` : '';
-      return head + members.map((c) => scenarioBlock(c, dict, r)).join('');
+      return head + members.map((c) => scenarioBlock(c, dict, r, qaChanges?.get(c.id))).join('');
     }).join('');
     const story = feature.description.length
       ? `<p class="story">${feature.description.map((l) => `<span>${escapeHtml(l)}</span>`).join('')}</p>`
       : '';
-    return `<section class="feature" data-feature="${escapeHtml(file)}"><div class="feature-head"><span class="file">${escapeHtml(file)}</span><h2>${escapeHtml(feature.name)}</h2></div>${story}${body}</section>`;
+    const removed = removedQa.filter((c) => c.file === file).map((c) => scenarioBlock(c, dict, r, { kind: 'removed' }));
+    return `<section class="feature" data-feature="${escapeHtml(file)}"><div class="feature-head"><span class="file">${escapeHtml(file)}</span><h2>${escapeHtml(feature.name)}</h2></div>${story}${body}${removedGroup(removed, r)}</section>`;
   }).join('\n');
+  // 整個 feature 檔都刪掉的情境，集中放在最後
+  const orphan = removedQa.filter((c) => !features.some((f) => f.file === c.file)).map((c) => scenarioBlock(c, dict, r, { kind: 'removed' }));
 
-  return intro(r.intro.acceptance) + toolbar + sections + `<p class="empty-filter" id="ac-empty">${escapeHtml(r.noMatch)}</p>`;
+  return intro(r.intro.acceptance) + toolbar + sections + removedGroup(orphan, r) + `<p class="empty-filter" id="ac-empty">${escapeHtml(r.noMatch)}</p>`;
 };
 
 // ---------- 7. BDD Feature ----------
@@ -386,7 +471,8 @@ export const themeToggle = (label) => `<button type="button" class="theme-toggle
 </button>`;
 
 export const renderCasesReview = ({
-  runId, context, risks, loaded, confirmationStatus, confirmation, stage = 'confirm', warnings = [], minReviewScore = 85, dict, language
+  runId, context, risks, loaded, confirmationStatus, confirmation, stage = 'confirm', warnings = [], minReviewScore = 85, dict, language,
+  revisions = [], currentSnapshot = null
 }) => {
   const r = dict.review;
   const { design, cases, files, prototypeHtml } = loaded;
@@ -394,12 +480,17 @@ export const renderCasesReview = ({
   const firstCase = (file) => Math.min(...cases.filter((c) => c.file === file).map((c) => Number(c.id.slice(3))), Infinity);
   const ordered = [...files].filter((f) => f.feature).sort((a, b) => firstCase(a.file) - firstCase(b.file));
   const features = ordered.map((f) => ({ feature: f.feature, file: f.file }));
-  const data = { context, risks, design, cases, files: ordered, features, warnings, minReviewScore, confirmationStatus, stage, prototypeHtml, dict, r };
+  const history = revisions.length && currentSnapshot ? revisionHistory(revisions, currentSnapshot) : [];
+  const rev = history.length
+    ? { round: history.at(-1).round, latest: history.at(-1).diff, history, firstCount: revisions[0].snapshot.qa.length }
+    : null;
+  const data = { context, risks, design, cases, files: ordered, features, warnings, minReviewScore, confirmationStatus, stage, prototypeHtml, dict, r, rev };
+  const pageIds = PAGES.filter((id) => id !== 'changes' || rev);
 
-  const builders = { overview: overviewPage, matrix: matrixPage, state: statePage, prototype: prototypePage, pm: pmPage, acceptance: acceptancePage, bdd: bddPage };
+  const builders = { overview: overviewPage, matrix: matrixPage, state: statePage, prototype: prototypePage, pm: pmPage, acceptance: acceptancePage, bdd: bddPage, changes: changesPage };
   // 分頁元素 id 加前綴，避免瀏覽器依網址 hash 自動捲動到分頁位置
-  const pages = PAGES.map((id) => `<div class="page" id="page-${id}" data-page="${id}">${builders[id](data)}</div>`).join('\n');
-  const tabs = PAGES.map((id, i) => `<a href="#${id}"><span class="n">${i + 1}</span>${escapeHtml(r.tabs[id])}</a>`).join('');
+  const pages = pageIds.map((id) => `<div class="page" id="page-${id}" data-page="${id}">${builders[id](data)}</div>`).join('\n');
+  const tabs = pageIds.map((id, i) => `<a href="#${id}"><span class="n">${i + 1}</span>${escapeHtml(r.tabs[id])}</a>`).join('');
 
   const statusLabel = confirmationStatus === 'confirmed'
     ? `${r.confirmed} · ${confirmation.confirmedBy} · ${confirmation.confirmedAt.slice(0, 16).replace('T', ' ')}`
@@ -420,5 +511,5 @@ export const renderCasesReview = ({
     asset('cases-review.html')
   );
   return html.replace('{{theme}}', asset('theme.css')).replace('{{themeToggle}}', themeToggle(r.themeLabel))
-    .replace('{{tabs}}', tabs).replace('{{pages}}', pages);
+    .replace('{{revision}}', revisionBanner(rev, r)).replace('{{tabs}}', tabs).replace('{{pages}}', pages);
 };
